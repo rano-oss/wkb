@@ -15,12 +15,6 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
   preview/active query methods.
 - Extended evdev physical-key table through code 633 (single lookup table).
 
-### Added
-
-- `full` feature (both `compositor` and `client`) for integration tests.
-- `tests/compositor_client.rs` — compositor modifier state drives client
-  `key_char` / `compose`.
-
 ## [0.3.2] - 2026-08-25
 
 ### Added

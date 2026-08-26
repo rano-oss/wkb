@@ -25,12 +25,12 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run lib tests
-        run: cargo test --lib
+        run: cargo test --lib --no-default-features --features xkb,client
 
       - name: Run doc tests
-        run: cargo test --doc
+        run: cargo test --doc --no-default-features --features xkb,client
 
-  test-independent:
+  test-integration:
     name: test (${{ matrix.test_target }})
     runs-on: ubuntu-latest
     container:
@@ -38,20 +38,47 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        test_target:
-          - compose
-          - ctrl_keys_combo
-          - ctrl_keys_function
-          - ir
-          - keymap
-          - compile
-          - physical_logical
-          - groups
-          - type
-          - led_lights
-          - modifiers
-          - repeat
-          - unicode
+        include:
+          - test_target: compose
+            features: xkb,client
+          - test_target: ctrl_keys_combo
+            features: xkb,compositor
+          - test_target: ctrl_keys_function
+            features: xkb,compositor
+          - test_target: ir
+            features: xkb,compositor
+          - test_target: keymap
+            features: xkb,compositor
+          - test_target: compile
+            features: xkb,compositor
+          - test_target: physical_logical
+            features: xkb,compositor
+          - test_target: groups
+            features: xkb,compositor
+          - test_target: type
+            features: xkb,compositor
+          - test_target: led_lights
+            features: xkb,compositor
+          - test_target: modifiers
+            features: xkb,compositor
+          - test_target: repeat
+            features: xkb,compositor
+          - test_target: unicode
+            features: xkb,compositor
+          - test_target: levels_level_keys
+            features: xkb,compositor
+          - test_target: levels_keysym
+            features: xkb,compositor
+          - test_target: locks_caps_lock
+            features: xkb,compositor
+          - test_target: locks_caps_num_lock
+            features: xkb,compositor
+          - test_target: locks_level
+            features: xkb,compositor
+          - test_target: locks_num_lock
+            features: xkb,compositor
+          - test_target: locks_state
+            features: xkb,compositor
     steps:
       - name: Install system dependencies
         run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
@@ -66,37 +93,4 @@ jobs:
         uses: Swatinem/rust-cache@v2
 
       - name: Run test target
-        run: cargo test --test ${{ matrix.test_target }}
-
-  test-levels-locks:
-    name: test (${{ matrix.test_target }})
-    needs: [test-unit-doc, test-independent]
-    runs-on: ubuntu-latest
-    container:
-      image: fedora:latest
-    strategy:
-      fail-fast: false
-      matrix:
-        test_target:
-          - levels_level_keys
-          - levels_keysym
-          - locks_caps_lock
-          - locks_caps_num_lock
-          - locks_level
-          - locks_num_lock
-          - locks_state
-    steps:
-      - name: Install system dependencies
-        run: dnf install -y gcc libxkbcommon-devel xkeyboard-config libX11-common
-
-      - name: Checkout
-        uses: actions/checkout@v5
-
-      - name: Set up Rust toolchain
-        uses: dtolnay/rust-toolchain@stable
-
-      - name: Cache cargo registry and target
-        uses: Swatinem/rust-cache@v2
-
-      - name: Run test target
-        run: cargo test --test ${{ matrix.test_target }}
+        run: cargo test --no-default-features --features ${{ matrix.features }} --test ${{ matrix.test_target }}

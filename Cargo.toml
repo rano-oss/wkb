@@ -31,8 +31,6 @@ xkb = [
 compositor = []
 # Client role. Mutually exclusive with `compositor`.
 client = []
-# Both roles — for integration tests only; not for production builds.
-full = ["compositor", "client"]
 
 [dependencies]
 arrayvec = "0.7"
@@ -84,8 +82,3 @@ required-features = ["xkb", "client"]
 [[example]]
 name = "bench_size_xkbcommon_dl"
 required-features = ["xkb", "client"]
-
-[[test]]
-name = "compositor_client"
-path = "tests/compositor_client.rs"
-required-features = ["xkb", "full"]

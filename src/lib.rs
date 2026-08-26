@@ -51,10 +51,8 @@
 //! - **`client`** (default) — Compose trie, [`WKB::compose`], [`WKB::leave`].
 //!   Use [`WKB::update_modifiers`] from the compositor; no `press_key` on clients.
 
-#[cfg(all(feature = "compositor", feature = "client", not(feature = "full")))]
-compile_error!(
-    "features `compositor` and `client` are mutually exclusive; enable exactly one (or `full` for tests)"
-);
+#[cfg(all(feature = "compositor", feature = "client"))]
+compile_error!("features `compositor` and `client` are mutually exclusive; enable exactly one");
 
 #[cfg(not(any(feature = "compositor", feature = "client")))]
 compile_error!("enable either the `compositor` or `client` feature");
