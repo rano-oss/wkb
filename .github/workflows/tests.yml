@@ -41,11 +41,15 @@ jobs:
         include:
           - test_target: compose
             features: xkb,client
+          - test_target: ir_client
+            features: xkb,client
+          - test_target: ir
+            features: xkb,client
+          - test_target: ir
+            features: xkb,compositor
           - test_target: ctrl_keys_combo
             features: xkb,compositor
           - test_target: ctrl_keys_function
-            features: xkb,compositor
-          - test_target: ir
             features: xkb,compositor
           - test_target: keymap
             features: xkb,compositor

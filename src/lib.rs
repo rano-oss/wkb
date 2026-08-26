@@ -58,11 +58,13 @@ compile_error!("features `compositor` and `client` are mutually exclusive; enabl
 compile_error!("enable either the `compositor` or `client` feature");
 
 use crate::modifiers::*;
+#[cfg(feature = "client")]
 use composer::Composer;
 #[cfg(feature = "client")]
 pub use composer::{ComposeState, ComposeString};
 #[cfg(feature = "client")]
 use composer::Token;
+#[cfg(feature = "client")]
 mod composer;
 mod flat_keymap;
 mod groups;
@@ -84,8 +86,10 @@ mod xkb;
 #[cfg(feature = "xkb")]
 pub use xkb::XkbError;
 #[cfg(feature = "xkb")]
+pub use xkb::keysym_to_named_key;
+#[cfg(all(feature = "xkb", feature = "client"))]
 #[doc(hidden)]
-pub use xkb::{keysym_to_named_key, load_compose_from_path, load_compose_from_path_uncached};
+pub use xkb::{load_compose_from_path, load_compose_from_path_uncached};
 pub(crate) const BITSET_WORDS: usize = 12;
 
 #[derive(Debug, Clone, PartialEq, Eq, Copy, Default)]
@@ -143,6 +147,7 @@ pub enum WkbError {
 pub struct KBLayout {
     pub(crate) name: String,
     pub(crate) repeat_keys: KeyBitSet,
+    #[cfg(feature = "client")]
     pub(crate) composer: Composer,
     pub(crate) modifiers: Modifiers,
     pub(crate) state_keymap: FlatKeymap,

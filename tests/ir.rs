@@ -219,37 +219,21 @@ fn xkb_roundtrip_preserves_behavior() {
 }
 
 #[test]
-fn exported_compose_is_reachable_filtered() {
+#[cfg(feature = "compositor")]
+fn xkb_export_omits_compose() {
     let wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
     let file = wkb.export_layout(0).unwrap();
-    if file.compose.is_empty() {
-        return; // no compose data available in this environment
-    }
+    assert!(file.compose.is_empty());
+}
 
-    let mut reachable = Vec::new();
-    for keys in file.keymap.values() {
-        reachable.extend(keys.values().copied());
-    }
-    for keys in file.caps_lock_keymap.values() {
-        reachable.extend(keys.values().copied());
-    }
-    for keys in file.num_lock_keys.values() {
-        reachable.extend(keys.values().copied());
-    }
-    reachable.sort_unstable();
-    reachable.dedup();
-
-    for (keys, _) in &file.compose {
-        for ch in keys {
-            if *ch == COMPOSE {
-                continue;
-            }
-            assert!(
-                reachable.binary_search(ch).is_ok(),
-                "compose key {ch:?} is not reachable in the layout"
-            );
-        }
-    }
+#[test]
+#[cfg(feature = "compositor")]
+fn layout_file_compose_ignored_on_import() {
+    let mut file = sample_file();
+    file.compose = vec![(vec![COMPOSE, 'a', 'e'], 'æ')];
+    let wkb = WKB::new_from_layouts(vec![file]).unwrap();
+    let exported = wkb.export_layout(0).unwrap();
+    assert!(exported.compose.is_empty());
 }
 
 #[test]

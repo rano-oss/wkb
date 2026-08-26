@@ -1,5 +1,6 @@
 //! XKB module — keymap construction from RMLVO names and XKB strings,
 //! plus XKB v1 text serialization.
+#[cfg(feature = "client")]
 pub(crate) mod compose;
 pub(crate) mod keymap;
 pub(crate) mod keynames;
@@ -11,13 +12,10 @@ pub(crate) mod symbols;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
 use crate::xkb::keymap::{xkb_context_new, xkb_keymap_new_from_names, xkb_keymap_new_from_string};
 use crate::xkb::parser::{ActionFlags, XkbAction, XkbGroupAction};
-#[cfg(not(feature = "client"))]
-use crate::Composer;
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use crate::{Group, GroupChange, GroupKind, Groups, KeyBitSet};
 #[cfg(feature = "client")]
-use compose::layout_composer;
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
 use std::collections::BTreeMap;
@@ -319,6 +317,7 @@ fn layout_has_level5_activation(
                         .any(|level| matches!(level.sym, 0xfe11 | 0xfe12))
             })
 }
+#[cfg_attr(not(feature = "client"), allow(unused_variables))]
 fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str>) -> WKB {
     const EVDEV_OFFSET: u32 = 8;
     let min_keycode = keymap.min_key_code.max(EVDEV_OFFSET);
@@ -366,9 +365,6 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     let num_kc = level_code(&modifiers, ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
     let caps_active = lock_activation(keymap, &compiled_types, caps_kc, 0xffe5, &level_masks);
     let num_active = lock_activation(keymap, &compiled_types, num_kc, 0xff7f, &level_masks);
-    let locale_hints: Vec<&str> = layout_locales
-        .map(|locales| locales.split(',').collect())
-        .unwrap_or_default();
     #[cfg(feature = "client")]
     let env_locale = std::env::var("LC_ALL")
         .or_else(|_| std::env::var("LC_CTYPE"))
@@ -468,6 +464,11 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         let [state_keymap, caps_lock_keymap, num_lock_keys, caps_num_lock_keys] = maps;
         #[cfg(feature = "client")]
         let composer = {
+            use compose::layout_composer;
+
+            let locale_hints: Vec<&str> = layout_locales
+                .map(|locales| locales.split(',').collect())
+                .unwrap_or_default();
             let mut reachable: Vec<char> = state_keymap
                 .data
                 .iter()
@@ -491,8 +492,6 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 })
                 .unwrap_or_default()
         };
-        #[cfg(not(feature = "client"))]
-        let composer = Composer::new();
         layouts.push(KBLayout {
             name: keymap
                 .group_names
@@ -502,6 +501,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 .map(str::to_owned)
                 .unwrap_or_else(|| format!("Layout {layout_idx}")),
             repeat_keys,
+            #[cfg(feature = "client")]
             composer,
             modifiers: modifiers.clone(),
             state_keymap,

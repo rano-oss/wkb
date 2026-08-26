@@ -1,7 +1,6 @@
 pub(crate) use super::parser::{
     XkbContext, XkbKeymap, XkbModSet, XkbRuleNames, MOD_REAL, MOD_REAL_MASK_ALL, XKB_MAX_GROUPS,
 };
-use crate::xkb::keysym::keysym_to_codepoint;
 use crate::xkb::parse_xkb::braced_end;
 use arrayvec::ArrayVec;
 use std::borrow::Cow;
@@ -217,13 +216,18 @@ fn strip_compat_map(input: &[u8]) -> Cow<'_, [u8]> {
     stripped.extend_from_slice(&input[end..]);
     Cow::Owned(stripped)
 }
+#[cfg(feature = "client")]
+use crate::xkb::keysym::keysym_to_codepoint;
+#[cfg(feature = "client")]
 use std::path::Path;
+#[cfg(feature = "client")]
 #[derive(Clone)]
 pub struct ComposeEntry {
     pub keys: ArrayVec<char, 8>,
     pub multi_key_index: Option<usize>,
     pub output: char,
 }
+#[cfg(feature = "client")]
 pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
     if name.len() == 1 {
         let b = name.as_bytes()[0];
@@ -241,6 +245,7 @@ pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
         .then(|| u32::from_str_radix(hex, 16).ok().and_then(char::from_u32))
         .flatten()
 }
+#[cfg(feature = "client")]
 pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F) -> bool
 where
     F: FnMut(ComposeEntry),
@@ -262,6 +267,7 @@ where
     }
     true
 }
+#[cfg(feature = "client")]
 fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
     let (lhs, rhs) = line.split_once(':')?;
     let rhs = rhs.split('#').next()?.trim();
@@ -284,6 +290,7 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
         output: parse_rhs_value(rhs)?,
     })
 }
+#[cfg(feature = "client")]
 fn parse_rhs_value(rhs: &str) -> Option<char> {
     let rhs = rhs.trim();
     if let Some(quoted) = rhs.strip_prefix('"') {
@@ -301,6 +308,7 @@ fn parse_rhs_value(rhs: &str) -> Option<char> {
         keysym_name_to_char(rhs.split_whitespace().next()?)
     }
 }
+#[cfg(feature = "client")]
 pub(crate) fn resolve_compose_file(_locale: &str) -> Option<String> {
     Some("en_US.UTF-8/Compose".into())
 }

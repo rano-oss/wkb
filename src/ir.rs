@@ -15,6 +15,7 @@ use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "client")]
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
 use crate::modifiers::{ModKind, ModType, Modifier, Modifiers, StateModifier};
@@ -337,13 +338,26 @@ impl TryFrom<&KBLayout> for LayoutFile {
             caps_lock_keymap: char_section(&layout.caps_lock_keymap),
             caps_num_lock_keys: char_section(&layout.caps_num_lock_keys),
             keysym_map: named_section(&layout.named_key_map),
-            compose: compose_from_composer(&layout.composer, &reachable_chars(layout)),
+            compose: compose_section(layout),
         };
         file.validate()?;
         Ok(file)
     }
 }
 
+fn compose_section(layout: &KBLayout) -> Vec<(Vec<char>, char)> {
+    #[cfg(feature = "client")]
+    {
+        compose_from_composer(&layout.composer, &reachable_chars(layout))
+    }
+    #[cfg(not(feature = "client"))]
+    {
+        let _ = layout;
+        Vec::new()
+    }
+}
+
+#[cfg(feature = "client")]
 /// Characters this layout can produce, for filtering the compose table.
 fn reachable_chars(layout: &KBLayout) -> Vec<char> {
     let mut reachable: Vec<char> = layout
@@ -459,6 +473,7 @@ fn modaction_from_state_modifier(kind: &StateModifier) -> ModAction {
     }
 }
 
+#[cfg(feature = "client")]
 /// Depth-first walk of the composer trie emitting reachable, sorted sequences.
 fn compose_from_composer(composer: &Composer, reachable: &[char]) -> Vec<(Vec<char>, char)> {
     let mut out = Vec::new();
@@ -468,6 +483,7 @@ fn compose_from_composer(composer: &Composer, reachable: &[char]) -> Vec<(Vec<ch
     out
 }
 
+#[cfg(feature = "client")]
 fn dfs_compose(
     composer: &Composer,
     node: u32,
@@ -521,6 +537,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             modifiers.set_modifier(*keycode, modifier);
         }
 
+        #[cfg(feature = "client")]
         let composer = composer_from_compose(&file.compose);
 
         let state_keymap = from_levels(&file.keymap, num_keys, Some);
@@ -532,6 +549,7 @@ impl TryFrom<LayoutFile> for KBLayout {
         Ok(KBLayout {
             name: file.layout,
             repeat_keys,
+            #[cfg(feature = "client")]
             composer,
             modifiers,
             state_keymap,
@@ -577,6 +595,7 @@ fn modkind_from_modaction(action: ModAction) -> StateModifier {
     }
 }
 
+#[cfg(feature = "client")]
 fn composer_from_compose(sequences: &[(Vec<char>, char)]) -> Composer {
     let mut composer = Composer::new();
     for (keys, output) in sequences {
