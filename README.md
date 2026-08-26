@@ -117,23 +117,23 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (compositor) | 1.17 ms | 205.7 µs | 1.98 ms | 1.94 ms | **1.7x faster** |
-| Setup (client + compose) | 1.22 ms | 201.3 µs | 3.90 ms | 3.93 ms | **3.2x faster** |
-| Compositor key update | 131 ns | 131 ns | 152 ns | 150 ns | **1.2x faster** |
-| Compositor get char | 136 ns | 137 ns | 267 ns | 246 ns | **2.0x faster** |
-| Compositor get keysym | 137 ns | 137 ns | 208 ns | 201 ns | **1.5x faster** |
-| Client update_modifiers | 221 ns | 221 ns | 153 ns | 150 ns | 1.4x slower |
-| Client get char | 234 ns | 234 ns | 266 ns | 247 ns | **1.1x faster** |
-| Client get keysym | 234 ns | 234 ns | 205 ns | 201 ns | 1.1x slower |
-| Compose feed | 63 ns | 48 ns | 476 ns | 457 ns | **7.6x faster** |
+| Setup (compositor) | 1.31 ms | 228.7 µs | 2.14 ms | 2.15 ms | **1.6x faster** |
+| Setup (client + compose) | 1.37 ms | 236.6 µs | 3.99 ms | 3.98 ms | **2.9x faster** |
+| Compositor key update | 137 ns | 141 ns | 167 ns | 168 ns | **1.2x faster** |
+| Compositor get char | 151 ns | 148 ns | 316 ns | 276 ns | **2.1x faster** |
+| Compositor get keysym | 157 ns | 157 ns | 214 ns | 208 ns | **1.4x faster** |
+| Client update_modifiers | 234 ns | 234 ns | 170 ns | 168 ns | 1.4x slower |
+| Client get char | 239 ns | 238 ns | 299 ns | 276 ns | **1.3x faster** |
+| Client get keysym | 260 ns | 260 ns | 209 ns | 207 ns | 1.2x slower |
+| Compose feed | 72 ns | 49 ns | 527 ns | 531 ns | **7.3x faster** |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 4.6 MB |
-| wkb-noxkb | 3.1 MB |
-| xkbcommon | 4.9 MB |
+| wkb | 4.4 MB |
+| wkb-noxkb | 3.0 MB |
+| xkbcommon | 4.8 MB |
 | xkbcommon-dl | 4.9 MB |
 
 ### Binary Size
@@ -143,7 +143,7 @@ Sizes for xkbcommon and xkbcommon-dl include the dynamically-linked `libxkbcommo
 | Binary | Size (stripped) |
 |--------|----------------|
 | wkb (no XKB) | 707 KB |
-| wkb (with XKB) | 628 KB |
+| wkb (with XKB) | 626 KB |
 | xkbcommon | 730 KB |
 | xkbcommon-dl | 763 KB |
 
