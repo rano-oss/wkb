@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! If a key is added to `NamedKey` that changes the collapse set, the
 //! comparison helpers in this file must be updated.
 

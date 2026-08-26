@@ -14,6 +14,7 @@ fn cfg() -> Criterion {
         .sample_size(20)
 }
 
+#[cfg(feature = "compositor")]
 fn without_compose<T>(f: impl FnOnce() -> T) -> T {
     let saved = ["LC_ALL", "LC_CTYPE", "LANG"].map(|name| (name, std::env::var(name).ok()));
     for (name, _) in &saved {
@@ -31,6 +32,7 @@ fn without_compose<T>(f: impl FnOnce() -> T) -> T {
     result
 }
 
+#[cfg(feature = "compositor")]
 fn bench_setup_no_compose(c: &mut Criterion) {
     let mut group = c.benchmark_group("setup/no_compose");
     let locale = "us";
@@ -167,6 +169,7 @@ fn bench_setup_no_compose(c: &mut Criterion) {
     group.finish();
 }
 
+#[cfg(feature = "client")]
 fn bench_setup_with_compose(c: &mut Criterion) {
     let mut group = c.benchmark_group("setup/with_compose");
     let locale = "us";
@@ -286,9 +289,22 @@ fn bench_setup_with_compose(c: &mut Criterion) {
     group.finish();
 }
 
+#[cfg(feature = "compositor")]
 criterion_group! {
-    name = benches;
+    name = benches_compositor;
     config = cfg();
-    targets = bench_setup_no_compose, bench_setup_with_compose,
+    targets = bench_setup_no_compose,
 }
-criterion_main!(benches);
+
+#[cfg(feature = "client")]
+criterion_group! {
+    name = benches_client;
+    config = cfg();
+    targets = bench_setup_with_compose,
+}
+
+#[cfg(feature = "compositor")]
+criterion_main!(benches_compositor);
+
+#[cfg(feature = "client")]
+criterion_main!(benches_client);

@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 use test_case::test_matrix;
 use xkbcommon::xkb::Keycode;
 

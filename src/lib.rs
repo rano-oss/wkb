@@ -9,48 +9,62 @@
 //! ```rust,no_run
 //! use wkb::WKB;
 //!
-//! // Build from an XKB keymap string (e.g. received from a Wayland compositor)
 //! let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
 //! let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
 //!
-//! // Update keyboard state for a key press.
-//! let changes = wkb.press_key(30);
+//! # #[cfg(feature = "client")]
+//! {
+//!     wkb.update_modifiers(0, 0, 0, 0);
+//!     let physical = wkb.physical_key(30);
+//!     let named = wkb.named_key(30);
+//!     let character = wkb.key_char(30);
+//!     let compose = wkb.compose(30);
+//!     println!(
+//!         "physical={physical:?} named={named:?} char={character:?} compose={compose:?}"
+//!     );
+//! }
 //!
-//! // Resolve identity/text independently.
-//! let physical = wkb.physical_key(30);
-//! let named = wkb.named_key(30);
-//! let character = wkb.key_char(30);
-//! let compose = wkb.compose(30);
-//!
-//! println!(
-//!     "physical={physical:?} named={named:?} char={character:?} compose={compose:?}"
-//! );
-//! assert!(!changes.leds_updated);
+//! # #[cfg(feature = "compositor")]
+//! {
+//!     let changes = wkb.press_key(30);
+//!     assert!(!changes.leds_updated);
+//! }
 //! ```
 //!
 //! ## Key Event API
 //!
-//! | Method | Mutates state | Use case |
-//! |--------|--------------|----------|
-//! | [`WKB::press_key`] | yes | Key down — updates modifier/group state |
-//! | [`WKB::release_key`] | yes | Key up — updates modifier/group state |
-//! | [`WKB::compose`] | yes | Feed a key into compose processing |
-//! | [`WKB::repeat_key`] | yes | Feed a repeated key into compose processing |
-//! | [`WKB::key_char`] | no | Character under current modifiers (before compose) |
-//! | [`WKB::named_key`] | no | Named non-character identity under current state |
-//! | [`WKB::physical_key`] | no | Physical position from the evdev code alone |
+//! | Method | Role | Use case |
+//! |--------|------|----------|
+//! | [`WKB::press_key`] | compositor | Key down — updates modifier/group state |
+//! | [`WKB::release_key`] | compositor | Key up — updates modifier/group state |
+//! | [`WKB::compose`] | client | Feed a key into compose processing |
+//! | [`WKB::update_modifiers`] | client | Apply `wl_keyboard.modifiers` |
 //!
 //! Key state mutation, key identity, character lookup, and compose processing
 //! are intentionally separate. Public keycodes are always raw Linux/evdev codes.
 //!
 //! ## Feature Flags
 //!
-//! - **`xkb`** (default) — XKB keymap compilation.
-//! - **`compose`** (default) — Compose-key / dead-key sequence support.
+//! - **`xkb`** — XKB keymap compilation (enabled by default via `client`).
+//! - **`compositor`** — [`WKB::press_key`] / [`WKB::release_key`] update modifiers,
+//!   groups, and LEDs (Smithay). Mutually exclusive with `client`.
+//! - **`client`** (default) — Compose trie, [`WKB::compose`], [`WKB::leave`].
+//!   Use [`WKB::update_modifiers`] from the compositor; no `press_key` on clients.
+
+#[cfg(all(feature = "compositor", feature = "client", not(feature = "full")))]
+compile_error!(
+    "features `compositor` and `client` are mutually exclusive; enable exactly one (or `full` for tests)"
+);
+
+#[cfg(not(any(feature = "compositor", feature = "client")))]
+compile_error!("enable either the `compositor` or `client` feature");
 
 use crate::modifiers::*;
+use composer::Composer;
+#[cfg(feature = "client")]
 pub use composer::{ComposeState, ComposeString};
-use composer::{Composer, Token};
+#[cfg(feature = "client")]
+use composer::Token;
 mod composer;
 mod flat_keymap;
 mod groups;
@@ -173,9 +187,9 @@ impl WKB {
 }
 
 impl WKB {
-    /// Reset all transient input state: compose sequence.
-    /// Call on wl_keyboard.leave or when focus changes.
-    pub fn reset_state(&mut self) {
+    /// Clear in-progress compose on the active layout (e.g. `wl_keyboard.leave`).
+    #[cfg(feature = "client")]
+    pub fn leave(&mut self) {
         self.layouts[self.current_layout_idx].composer.reset();
     }
 
@@ -250,8 +264,13 @@ impl WKB {
         let before_mods = self.raw_modifiers();
         let before_leds = self.leds_state();
         if (group as usize) < self.num_layouts() {
-            self.groups.set_layout(group as usize, self.num_layouts());
-            self.current_layout_idx = group as usize;
+            let new_layout = group as usize;
+            #[cfg(feature = "client")]
+            if new_layout != self.current_layout_idx {
+                self.layouts[self.current_layout_idx].composer.reset();
+            }
+            self.groups.set_layout(new_layout, self.num_layouts());
+            self.current_layout_idx = new_layout;
         }
         self.layouts[self.current_layout_idx]
             .modifiers
@@ -298,9 +317,12 @@ impl WKB {
         if layout_idx >= self.layouts.len() {
             return Err(WkbError::InvalidLayout(layout_idx));
         }
-        let old_layout = self.current_layout_idx;
-        if layout_idx != old_layout {
-            let raw = self.layouts[old_layout].modifiers.state(layout_idx);
+        if layout_idx != self.current_layout_idx {
+            let old_kb_layout = &mut self.layouts
+            [self.current_layout_idx];
+            #[cfg(feature = "client")]
+            old_kb_layout.composer.reset();
+            let raw = old_kb_layout.modifiers.state(layout_idx);
             self.layouts[layout_idx]
                 .modifiers
                 .update(raw.depressed, raw.latched, raw.locked);
@@ -461,7 +483,7 @@ impl WKB {
     /// into the compose sequence, matching the desktop `compose:XXX` option
     /// behavior. Applies to all layouts; any existing modifier on the key is
     /// replaced.
-    #[cfg(feature = "compose")]
+    #[cfg(feature = "client")]
     pub fn set_compose_key(&mut self, evdev_code: u32) {
         for layout in &mut self.layouts {
             layout.modifiers.set_modifier(
@@ -484,33 +506,35 @@ impl WKB {
         true
     }
 
-    /// Process a key press and update modifier/group state.
+    /// Process a key press (compositor role only).
     ///
-    /// Key identity, character resolution, and compose processing are separate;
-    /// use [`Self::physical_key`], [`Self::named_key`], [`Self::key_char`],
-    /// and [`Self::compose`] as needed.
+    /// Updates modifier, group, and LED state. Wayland clients use
+    /// [`Self::update_modifiers`] and [`Self::compose`] instead.
+    #[cfg(feature = "compositor")]
     pub fn press_key(&mut self, evdev_code: u32) -> StateChanges {
         self.change_key_state(evdev_code, KeyDirection::Down)
     }
 
-    /// Process a key release and update modifier/group state.
+    /// Process a key release (compositor role only).
+    #[cfg(feature = "compositor")]
     pub fn release_key(&mut self, evdev_code: u32) -> StateChanges {
         self.change_key_state(evdev_code, KeyDirection::Up)
     }
 
+    #[cfg(feature = "compositor")]
     #[inline]
     fn change_key_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> StateChanges {
         let before_modifiers = self.raw_modifiers();
         let before_leds = self.leds_state();
         let layouts = self.layouts.len();
-        let old_layout = self.current_layout_idx;
-        let kb_layout = &mut self.layouts[self.current_layout_idx];
-        let is_modifier = kb_layout.modifiers.set_state(evdev_code, key_direction);
+        let is_modifier = self.layouts[self.current_layout_idx]
+            .modifiers
+            .set_state(evdev_code, key_direction);
         let new_layout = self
             .groups
             .update(evdev_code, key_direction, !is_modifier, layouts);
-        if new_layout != old_layout {
-            let raw = kb_layout.modifiers.state(new_layout);
+        if new_layout != self.current_layout_idx {
+            let raw = self.layouts[self.current_layout_idx].modifiers.state(new_layout);
             self.layouts[new_layout]
                 .modifiers
                 .update(raw.depressed, raw.latched, raw.locked);
@@ -528,10 +552,8 @@ impl WKB {
 
     /// Feed a key into compose processing without changing modifier state.
     ///
-    /// Call this after [`Self::press_key`] for an initial key press, or directly
-    /// for a repeated key. Character lookup uses the current state established
-    /// by the preceding key press.
-    #[cfg(feature = "compose")]
+    /// Client role only. Call after [`Self::update_modifiers`] on key press.
+    #[cfg(feature = "client")]
     pub fn compose(&mut self, evdev_code: u32) -> Option<ComposeState> {
         let is_compose_key =
             self.layouts[self.current_layout_idx]
@@ -548,8 +570,10 @@ impl WKB {
                 });
         let token = if is_compose_key {
             Token::Compose
+        } else if let Some(c) = self.key_char(evdev_code) {
+            Token::Char(c)
         } else {
-            Token::Char(self.key_char(evdev_code)?)
+            return self.layouts[self.current_layout_idx].composer.buffer()
         };
         Some(self.layouts[self.current_layout_idx].composer.feed(token))
     }

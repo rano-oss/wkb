@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Physical vs logical keys, state-change reporting, and multi-symbol parse errors.
 
 use wkb::{NamedKey, PhysicalKey, StateChanges, CAPS_LOCK, LEFT_SHIFT, NUM_LOCK, WKB};

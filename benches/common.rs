@@ -341,16 +341,14 @@ pub fn is_modifier_keysym(keysym: u32) -> bool {
     (0xffe1..=0xffee).contains(&keysym) || keysym == 0xff7f
 }
 
-/// Feed a compose sequence through WKB's `press_key`/`release_key` public API
-/// and return the final composed character.
+/// Feed a compose sequence through `compose` and return the final character.
+#[cfg(feature = "client")]
 pub fn wkb_feed_compose(wkb: &mut wkb::WKB, keys: &[(u32, bool)]) -> Option<char> {
     let mut out = None;
     for &(code, down) in keys {
-        if down {
-            wkb.press_key(code)
-        } else {
-            wkb.release_key(code)
-        };
+        if !down {
+            continue;
+        }
         let result = wkb.compose(code);
         if let Some(wkb::ComposeState::Finished(c)) = &result {
             out = Some(*c);

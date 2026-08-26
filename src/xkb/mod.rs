@@ -11,11 +11,12 @@ pub(crate) mod symbols;
 use crate::flat_keymap::{FlatKeymap, FlatNamedKeyMap, MAX_LEVELS};
 use crate::xkb::keymap::{xkb_context_new, xkb_keymap_new_from_names, xkb_keymap_new_from_string};
 use crate::xkb::parser::{ActionFlags, XkbAction, XkbGroupAction};
-#[cfg(not(feature = "compose"))]
+#[cfg(not(feature = "client"))]
 use crate::Composer;
 use crate::WKB;
 use crate::{modifiers::*, KBLayout};
 use crate::{Group, GroupChange, GroupKind, Groups, KeyBitSet};
+#[cfg(feature = "client")]
 use compose::layout_composer;
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
@@ -368,7 +369,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     let locale_hints: Vec<&str> = layout_locales
         .map(|locales| locales.split(',').collect())
         .unwrap_or_default();
-    #[cfg(feature = "compose")]
+    #[cfg(feature = "client")]
     let env_locale = std::env::var("LC_ALL")
         .or_else(|_| std::env::var("LC_CTYPE"))
         .or_else(|_| std::env::var("LANG"))
@@ -465,7 +466,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             }
         }
         let [state_keymap, caps_lock_keymap, num_lock_keys, caps_num_lock_keys] = maps;
-        #[cfg(feature = "compose")]
+        #[cfg(feature = "client")]
         let composer = {
             let mut reachable: Vec<char> = state_keymap
                 .data
@@ -490,7 +491,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 })
                 .unwrap_or_default()
         };
-        #[cfg(not(feature = "compose"))]
+        #[cfg(not(feature = "client"))]
         let composer = Composer::new();
         layouts.push(KBLayout {
             name: keymap

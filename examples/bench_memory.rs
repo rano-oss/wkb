@@ -55,19 +55,15 @@ fn run_workload_wkb_noxkb() -> u64 {
     print_rss("wkb-noxkb/before_setup");
 
     for &(locale, variant) in LAYOUTS {
-        let mut wb = wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap();
+        let wb = wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap();
 
         for case in KEY_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &(code, down) in case.keys {
                     if down {
-                        let result = wb.press_key(code);
                         if let Some(ch) = wb.key_char(code) {
                             checksum = checksum.wrapping_add(ch as u64);
                         }
-                        black_box(result);
-                    } else {
-                        black_box(wb.release_key(code));
                     }
                 }
             }
@@ -85,27 +81,22 @@ fn run_workload_wkb_xkb() -> u64 {
     print_rss("wkb/before_setup");
 
     for &(locale, variant) in LAYOUTS {
-        let mut wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
+        let wb = wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
 
         for case in KEY_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
                 for &(code, down) in case.keys {
                     if down {
-                        let result = wb.press_key(code);
                         if let Some(ch) = wb.key_char(code) {
                             checksum = checksum.wrapping_add(ch as u64);
                         }
-                        black_box(result);
-                    } else {
-                        let result = wb.release_key(code);
-                        black_box(result);
                     }
                 }
             }
         }
     }
 
-    // Compose workload through the same press_key pipeline.
+    // Compose workload (client path: compose only).
     unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
     let mut wb = WKB::new_from_names("", "", "us", "", None).unwrap();
     wb.set_compose_key(COMPOSE_KEY);
@@ -113,14 +104,11 @@ fn run_workload_wkb_xkb() -> u64 {
         for _ in 0..HOT_PATH_ITERATIONS {
             for &(code, down) in case.keys {
                 if down {
-                    wb.press_key(code);
                     let result = wb.compose(code);
                     if let Some(wkb::ComposeState::Finished(c)) = &result {
                         checksum = checksum.wrapping_add(*c as u64);
                     }
                     black_box(result);
-                } else {
-                    black_box(wb.release_key(code));
                 }
             }
         }

@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 use test_case::test_matrix;
 use wkb::{KeyDirection, ModType};
 use xkbcommon::xkb::{self as xkbcmn, Keycode};

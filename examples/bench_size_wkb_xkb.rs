@@ -13,39 +13,30 @@ fn main() {
     let mut checksum: u64 = 0;
 
     for &(locale, variant) in LAYOUTS {
-        let mut wb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
+        let wb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
 
         for case in KEY_CASES {
             for &(code, down) in case.keys {
                 if down {
-                    let result = wb.press_key(code);
                     if let Some(ch) = wb.key_char(code) {
                         checksum = checksum.wrapping_add(ch as u64);
                     }
-                    black_box(result);
-                } else {
-                    let result = wb.release_key(code);
-                    black_box(result);
                 }
             }
         }
     }
 
-    // Compose workload through the same press_key pipeline.
     unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
     let mut wb = WKB::new_from_names("", "", "us", "", None).unwrap();
     wb.set_compose_key(COMPOSE_KEY);
     for case in COMPOSE_CASES {
         for &(code, down) in case.keys {
             if down {
-                wb.press_key(code);
                 let result = wb.compose(code);
                 if let Some(wkb::ComposeState::Finished(c)) = &result {
                     checksum = checksum.wrapping_add(*c as u64);
                 }
                 black_box(result);
-            } else {
-                black_box(wb.release_key(code));
             }
         }
     }

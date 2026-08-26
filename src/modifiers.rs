@@ -78,6 +78,7 @@ pub enum ModKind {
 }
 
 impl ModKind {
+    #[cfg(feature = "compositor")]
     pub fn update(&mut self, key_direction: KeyDirection) {
         match self {
             ModKind::Press { ref mut pressed } => match key_direction {
@@ -123,6 +124,7 @@ impl ModKind {
         }
     }
 
+    #[cfg(feature = "compositor")]
     fn unlatch(&mut self) {
         if let ModKind::Latch {
             pressed: _,
@@ -178,10 +180,12 @@ impl StateModifier {
         self.mod_type == mod_type
     }
 
+    #[cfg(feature = "compositor")]
     pub fn unlatch(&mut self) {
         self.kind.unlatch();
     }
 
+    #[cfg(feature = "compositor")]
     pub fn update(&mut self, key_direction: KeyDirection) {
         self.kind.update(key_direction);
     }
@@ -201,6 +205,7 @@ impl Modifier {
         }
     }
 
+    #[cfg(feature = "compositor")]
     pub(crate) fn for_each_mut(&mut self, mut f: impl FnMut(&mut StateModifier)) {
         match self {
             Self::Single(mk) => f(mk),
@@ -327,6 +332,7 @@ impl Modifiers {
         self.raw.locked & MOD_NUM_LOCK != 0
     }
 
+    #[cfg(feature = "compositor")]
     pub fn unlatch(&mut self) {
         self.entries
             .iter_mut()
@@ -334,6 +340,7 @@ impl Modifiers {
         self.raw.latched = 0;
     }
 
+    #[cfg(feature = "compositor")]
     pub(crate) fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let position = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,

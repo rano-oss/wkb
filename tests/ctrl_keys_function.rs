@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Test function keys with CTRL (wkb should match xkbcommon exactly).
 
 use test_case::test_matrix;

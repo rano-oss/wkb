@@ -1,8 +1,9 @@
+#![cfg(feature = "compositor")]
 use std::collections::BTreeMap;
 
 use wkb::ir::{LayoutFile, ModAction};
 use wkb::{
-    ComposeState, GroupChange, GroupKind, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT,
+    GroupChange, GroupKind, KeyDirection, ModType, ALTGR, CAPS_LOCK, LEFT_SHIFT,
     RIGHT_SHIFT, WKB,
 };
 use xkbcommon::xkb::{self, Keycode};
@@ -168,11 +169,7 @@ fn latched_group_is_consumed_after_one_key() {
 
     let xkb_char = state.key_get_utf8(Keycode::new(38)).chars().last();
     wkb.press_key(30);
-    let result = wkb.compose(30);
-    let wkb_char = match result {
-        Some(ComposeState::Idle(ch)) => Some(ch),
-        other => panic!("expected a direct character, got {other:?}"),
-    };
+    let wkb_char = wkb.key_char(30);
     assert_eq!(wkb_char, xkb_char);
 
     state.update_key(Keycode::new(38), xkb::KeyDirection::Down);

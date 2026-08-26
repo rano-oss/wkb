@@ -1,9 +1,7 @@
+#![cfg(feature = "client")]
 //! Full-flow compose integration tests.
 //!
-//! Drives `WKB::press_key` end-to-end (modifiers + compose) and compares the
-//! final produced character against xkbcommon running the same keycode events
-//! through `xkb_state_update_key` → `xkb_state_key_get_one_sym` →
-//! `xkb_compose_state_feed`.
+//! Drives `WKB::compose` and compares the final produced character against xkbcommon.
 
 use std::path::Path;
 use std::sync::Mutex;
@@ -40,8 +38,7 @@ struct ComposeCase {
     expected: char,
 }
 
-/// Compose sequences exercising the whole `press_key` pipeline, including
-/// Shift-held punctuation.
+/// Compose sequences (Shift applied via `update_modifiers` where needed).
 const COMPOSE_CASES: &[ComposeCase] = &[
     ComposeCase {
         name: "acute_e",
@@ -137,20 +134,24 @@ const COMPOSE_CASES: &[ComposeCase] = &[
     },
 ];
 
-/// Feed a sequence of key events through WKB's public `press_key`/`release_key`
-/// API and return the final composed character.
+const MOD_SHIFT: u32 = 1;
+
+/// Feed a compose sequence via `update_modifiers` + `compose`.
 fn wkb_compose_char(wkb: &mut WKB, keys: &[(u32, bool)]) -> Option<char> {
+    let mut mods;
     let mut final_char = None;
     for &(evdev, down) in keys {
+        if evdev == SHIFT {
+            mods = if down { MOD_SHIFT } else { 0 };
+            wkb.update_modifiers(mods, 0, 0, 0);
+            continue;
+        }
         if down {
-            wkb.press_key(evdev);
             let result = wkb.compose(evdev);
             if let Some(wkb::ComposeState::Finished(c)) = &result {
                 final_char = Some(*c);
             }
-        } else {
-            wkb.release_key(evdev);
-        };
+        }
     }
     final_char
 }
@@ -321,7 +322,7 @@ fn compare_compose_flow(label: &str, keymap_str: &str, wkb: &mut WKB) {
 }
 
 /// Auto-detect path: keymap maps the Menu key to `Multi_key`, so WKB detects
-/// the compose key from the keymap and `press_key` feeds the Compose token.
+/// the compose key from the keymap and `compose` advances the sequence.
 #[test]
 fn compose_auto_detected_multi_key() {
     let _guard = ENV_LOCK.lock().unwrap_or_else(|p| p.into_inner());

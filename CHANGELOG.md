@@ -5,6 +5,38 @@ All notable changes to `wayland-keyboard` are documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- Removed duplicate `reset_compose`; use [`WKB::leave`] to clear in-progress compose.
+- [`ComposeState`] carries all per-key compose data: `Idle(char)`, `ComposeKey(buf)`
+  (`·` in buf), `Composing(buf)`, `Finished(char)`, `Cancelled`. No separate
+  preview/active query methods.
+- Extended evdev physical-key table through code 633 (single lookup table).
+
+### Added
+
+- `full` feature (both `compositor` and `client`) for integration tests.
+- `tests/compositor_client.rs` — compositor modifier state drives client
+  `key_char` / `compose`.
+
+## [0.3.2] - 2026-08-25
+
+### Added
+
+- Role features: **`client`** (default) and **`compositor`** — mutually exclusive.
+  Client: compose trie, `compose`, `leave`; compositor: full
+  `press_key` / `release_key` state machine.
+- `tests/dead_keys.rs` — pure compose vs dead-key char vs compose-trie vs xkbcommon sticky.
+
+### Changed
+
+- `compositor` and `client` cannot be enabled together (`compile_error`).
+- Client role has no `press_key` / `release_key`; use `update_modifiers` + `compose`.
+- Compositor `press_key` / `release_key` return [`StateChanges`].
+- Compose state on the layout being left is reset when switching groups via `set_layout`, `update_modifiers`, or group-switch key handling.
+
 ## [0.3.0] - 2026-08-21
 
 Version 0.3.0 is a breaking compositor-facing API change. Physical and

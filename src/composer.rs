@@ -12,8 +12,13 @@ pub type ComposeString = ArrayString<16>;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ComposeState {
+    /// Key did not participate in compose.
     Idle(char),
+    /// Compose (`Multi_key`) pressed; shows up as `·`.
+    ComposeKey(ComposeString),
+    /// Sequence in progress.
     Composing(ComposeString),
+    /// Sequence completed with composed output.
     Finished(char),
     Cancelled,
 }
@@ -110,7 +115,7 @@ impl Composer {
                         Token::Compose => {
                             let mut display = self.buf;
                             let _ = display.try_push('·');
-                            ComposeState::Composing(display)
+                            ComposeState::ComposeKey(display)
                         }
                     }
                 }
@@ -128,6 +133,10 @@ impl Composer {
                 }
             }
         }
+    }
+
+    pub fn buffer(&self) -> Option<ComposeState> {
+        (self.cur != 0).then(|| ComposeState::Composing(self.buf))
     }
 
     pub(crate) fn reset(&mut self) {

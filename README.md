@@ -35,40 +35,54 @@ wayland-keyboard = "0.3"
 ```rust,no_run
 use wkb::WKB;
 
-// Build from an XKB keymap string (e.g. received from a Wayland compositor)
+// Compositor: build from an XKB keymap string (e.g. received from wl_keyboard.keymap)
 let keymap_string = std::fs::read_to_string("/path/to/keymap").unwrap();
 let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
 
-// Process a key press (evdev code 30 = physical KeyA)
-let result = wkb.press_key(30);
-println!(
-    "physical={:?} logical={:?} compose={:?}",
-    result.physical_key, result.logical_key, result.compose
-);
-
-// Release the key
-let result = wkb.release_key(30);
+// Key down / up update modifier and group state (compositor feature)
+let changes = wkb.press_key(30); // evdev code 30 = KeyA
+wkb.release_key(30);
 
 // Query current modifier state
 let mods = wkb.raw_modifiers();
 println!("ctrl depressed={}", mods.depressed);
 ```
 
+### Client usage (winit, etc.)
+
+Clients receive modifier state from the compositor via `wl_keyboard.modifiers`.
+Use `update_modifiers` and drive compose with `compose` — there is no
+`press_key` / `release_key` on the client feature.
+
+```rust,no_run
+use wkb::WKB;
+
+let mut wkb = WKB::new_from_string(&keymap_string).unwrap();
+
+// After wl_keyboard.modifiers
+wkb.update_modifiers(depressed, latched, locked, group);
+
+// On key press: lookup + compose
+let ch = wkb.key_char(30);
+if let Some(wkb::ComposeState::Finished(c)) = wkb.compose(30) {
+    println!("composed: {}", c);
+}
+```
+
 ### Key Event API
 
-| Method | Mutates state | Use case |
-|--------|--------------|----------|
-| `press_key(evdev)` | yes | Key down — updates modifiers, advances compose |
-| `release_key(evdev)` | yes | Key up — updates modifiers |
-| `repeat_key(evdev)` | yes | Key repeat — advances compose |
-| `key_char(evdev)` | no | Raw character under current modifiers (no compose) |
-| `physical_key(evdev)` | no | Physical position from the evdev code alone |
-| `logical_key(evdev)` | no | Logical identity under layout + modifiers |
+| Method | Role | Mutates state | Use case |
+|--------|------|--------------|----------|
+| `press_key(evdev)` | compositor | yes | Key down — updates modifiers/groups |
+| `release_key(evdev)` | compositor | yes | Key up — updates modifiers/groups |
+| `update_modifiers(...)` | client | yes | Apply `wl_keyboard.modifiers` |
+| `compose(evdev)` | client | yes | Advance compose sequence on key down |
+| `key_char(evdev)` | both | no | Character under current modifiers |
+| `physical_key(evdev)` | both | no | Physical position from evdev alone |
+| `logical_key(evdev)` | both | no | Logical identity under layout + modifiers |
 
-All three event methods return a [`KeyResult`](https://docs.rs/wayland-keyboard/latest/wkb/struct.KeyResult.html)
-with physical and logical identity, compose state, whether the key is a
-modifier, and whether modifiers or LEDs changed. Keycodes are always raw
-Linux/evdev codes.
+Compositor `press_key` / `release_key` return [`StateChanges`](https://docs.rs/wayland-keyboard/latest/wkb/struct.StateChanges.html).
+Keycodes are always raw Linux/evdev codes.
 
 ### Compositor Usage
 
@@ -89,6 +103,8 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 
 | Flag | Default | Description |
 |------|---------|-------------|
+| `client` | yes | Client role — `compose`, `update_modifiers` (mutually exclusive with `compositor`) |
+| `compositor` | no | Compositor role — `press_key`, `release_key` |
 | `xkb` | yes | XKB keymap compilation |
 | `compose` | yes | Compose-key / dead-key sequence support |
 

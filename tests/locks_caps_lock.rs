@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Caps lock behavior: hold caps lock while reaching each level state and
 //! compare all keys against xkbcommon.
 

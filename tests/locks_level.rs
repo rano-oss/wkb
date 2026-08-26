@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Level-modifier state tests: reach each level by holding modifier keys
 //! (shift → level 2, altgr → level 3, …) and compare all keys against
 //! xkbcommon. No lock modifiers are active.
