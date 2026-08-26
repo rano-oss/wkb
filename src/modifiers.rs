@@ -11,19 +11,6 @@ pub(crate) const MOD_SCROLL_LOCK: u32 = 1 << 5; // Mod3
 pub(crate) const MOD_LOGO: u32 = 1 << 6; // Mod4
 pub(crate) const MOD_ALTGR: u32 = 1 << 7; // Mod5
 
-pub(crate) const MODIFIER_MAPPING: [(u32, u32); 10] = [
-    (LEFT_SHIFT, MOD_SHIFT),
-    (RIGHT_SHIFT, MOD_SHIFT),
-    (CAPS_LOCK, MOD_CAPS_LOCK),
-    (LEFT_CTRL, MOD_CTRL),
-    (RIGHT_CTRL, MOD_CTRL),
-    (ALT, MOD_ALT),
-    (NUM_LOCK, MOD_NUM_LOCK),
-    (SCROLL_LOCK, MOD_SCROLL_LOCK),
-    (LOGO, MOD_LOGO),
-    (ALTGR, MOD_ALTGR),
-];
-
 // Key constants
 pub const LEFT_CTRL: u32 = 29;
 pub const LEFT_SHIFT: u32 = 42;
@@ -198,6 +185,13 @@ pub enum Modifier {
 }
 
 impl Modifier {
+    #[cfg(feature = "client")]
+    pub(crate) fn has_mod_type(&self, mod_type: ModType) -> bool {
+        let mut found = false;
+        self.for_each(|sm| found |= sm.has_mod_type(mod_type));
+        found
+    }
+
     pub(crate) fn for_each(&self, mut f: impl FnMut(&StateModifier)) {
         match self {
             Self::Single(sm) => f(sm),
@@ -270,6 +264,24 @@ impl Modifiers {
     }
 
     #[inline]
+    #[cfg(feature = "client")]
+    pub(crate) fn key_is_compose(&self, evdev_code: u32) -> bool {
+        self.get(evdev_code)
+            .is_some_and(|modifier| modifier.has_mod_type(ModType::Compose))
+    }
+
+    #[inline]
+    pub(crate) fn raw_masks(&self) -> (u32, u32, u32) {
+        (self.raw.depressed, self.raw.latched, self.raw.locked)
+    }
+
+    #[inline]
+    #[cfg(feature = "compositor")]
+    pub(crate) fn has_latched(&self) -> bool {
+        self.raw.latched != 0
+    }
+
+    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = (&u32, &Modifier)> {
         self.entries.iter().map(|(c, m)| (c, m))
     }
@@ -334,6 +346,9 @@ impl Modifiers {
 
     #[cfg(feature = "compositor")]
     pub fn unlatch(&mut self) {
+        if self.raw.latched == 0 {
+            return;
+        }
         self.entries
             .iter_mut()
             .for_each(|(_, modifier)| modifier.for_each_mut(|sm| sm.unlatch()));
@@ -444,10 +459,17 @@ fn modifier_mask(code: u32, mod_type: ModType) -> u32 {
 
         // None is used for Ctrl, Alt and Logo. Preserve their distinct
         // protocol masks using the physical keycode.
-        ModType::None => MODIFIER_MAPPING
-            .iter()
-            .find(|(mapped_code, _)| *mapped_code == code)
-            .map_or(0, |(_, mask)| *mask),
+        ModType::None => match code {
+            LEFT_SHIFT | RIGHT_SHIFT => MOD_SHIFT,
+            CAPS_LOCK => MOD_CAPS_LOCK,
+            LEFT_CTRL | RIGHT_CTRL => MOD_CTRL,
+            ALT => MOD_ALT,
+            NUM_LOCK => MOD_NUM_LOCK,
+            SCROLL_LOCK => MOD_SCROLL_LOCK,
+            LOGO => MOD_LOGO,
+            ALTGR => MOD_ALTGR,
+            _ => 0,
+        },
     }
 }
 

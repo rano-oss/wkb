@@ -160,6 +160,30 @@ pub struct KBLayout {
     pub(crate) level_exceptions_keymap: FlatKeymap,
 }
 
+impl KBLayout {
+    #[inline]
+    fn char_at_level(&self, level: usize, evdev_code: u32) -> Option<char> {
+        let num_locked = self.modifiers.num_locked();
+        let caps_locked = self.modifiers.caps_locked();
+        if num_locked && caps_locked {
+            if let Some(c) = self.caps_num_lock_keys.get(level, evdev_code) {
+                return Some(c);
+            }
+        }
+        if num_locked {
+            if let Some(c) = self.num_lock_keys.get(level, evdev_code) {
+                return Some(c);
+            }
+        }
+        if caps_locked {
+            if let Some(c) = self.caps_lock_keymap.get(level, evdev_code) {
+                return Some(c);
+            }
+        }
+        self.state_keymap.get(level, evdev_code)
+    }
+}
+
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
 #[derive(Debug, Clone)]
 pub struct WKB {
@@ -264,9 +288,21 @@ impl WKB {
         locked: u32,
         group: u32,
     ) -> StateChanges {
+        let layout_idx = self.current_layout_idx;
+        let modifiers = &self.layouts[layout_idx].modifiers;
+        let (cur_d, cur_l, cur_lo) = modifiers.raw_masks();
+        let group_ok = (group as usize) < self.num_layouts();
+        if depressed == cur_d
+            && latched == cur_l
+            && locked == cur_lo
+            && (!group_ok || group as usize == layout_idx)
+        {
+            return StateChanges::default();
+        }
+
         let before_mods = self.raw_modifiers();
         let before_leds = self.leds_state();
-        if (group as usize) < self.num_layouts() {
+        if group_ok {
             let new_layout = group as usize;
             #[cfg(feature = "client")]
             if new_layout != self.current_layout_idx {
@@ -358,19 +394,12 @@ impl WKB {
     /// keys such as Shift and Escape keep their identity.
     pub fn named_key(&self, evdev_code: u32) -> NamedKey {
         let kb_layout = &self.layouts[self.current_layout_idx];
-        let (_none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
-        let nk = kb_layout.named_key_map.num_keys;
-        let level5 = level5 && kb_layout.named_key_map.data.len() > 4 * nk;
-        let level3 = level3 && kb_layout.named_key_map.data.len() > 2 * nk;
-        let level2 = level2 && kb_layout.named_key_map.data.len() > nk;
-        let level = level_index(level5, level3, level2);
-        for l in (0..=level).rev() {
-            let named = kb_layout.named_key_map.get(l, evdev_code);
-            if named != NamedKey::Unnamed {
-                return named;
-            }
-        }
-        NamedKey::Unnamed
+        let level = kb_layout
+            .named_key_map
+            .level_for_modifiers(&kb_layout.modifiers);
+        kb_layout
+            .named_key_map
+            .get_with_fallback(level, evdev_code)
     }
 
     /// Get the named key at a specific layout and level for an evdev keycode.
@@ -404,31 +433,14 @@ impl WKB {
     /// shortcut chords as typed text.
     pub fn key_char(&self, evdev_code: u32) -> Option<char> {
         let kb_layout = &self.layouts[self.current_layout_idx];
-        let (none_active, level2, level3, level5) = kb_layout.modifiers.active_none_and_levels();
+        let (none_active, _, _, _) = kb_layout.modifiers.active_none_and_levels();
         if none_active {
             return None;
         }
-        let nk = kb_layout.state_keymap.num_keys;
-        let level5 = level5 && kb_layout.state_keymap.data.len() > 4 * nk;
-        let level3 = level3 && kb_layout.state_keymap.data.len() > 2 * nk;
-        let level2 = level2 && kb_layout.state_keymap.data.len() > nk;
-        let base_level = level_index(level5, level3, level2);
-        if kb_layout.modifiers.num_locked() && kb_layout.modifiers.caps_locked() {
-            if let Some(c) = kb_layout.caps_num_lock_keys.get(base_level, evdev_code) {
-                return Some(c);
-            }
-        }
-        if kb_layout.modifiers.num_locked() {
-            if let Some(c) = kb_layout.num_lock_keys.get(base_level, evdev_code) {
-                return Some(c);
-            }
-        }
-        if kb_layout.modifiers.caps_locked() {
-            if let Some(c) = kb_layout.caps_lock_keymap.get(base_level, evdev_code) {
-                return Some(c);
-            }
-        }
-        kb_layout.state_keymap.get(base_level, evdev_code)
+        let base_level = kb_layout
+            .state_keymap
+            .level_for_modifiers(&kb_layout.modifiers);
+        kb_layout.char_at_level(base_level, evdev_code)
     }
 
     /// Return whether the given modifier type is currently active.
@@ -544,7 +556,10 @@ impl WKB {
             self.current_layout_idx = new_layout;
         }
         if !is_modifier && key_direction == KeyDirection::Down {
-            self.layouts[self.current_layout_idx].modifiers.unlatch();
+            let modifiers = &mut self.layouts[self.current_layout_idx].modifiers;
+            if modifiers.has_latched() {
+                modifiers.unlatch();
+            }
         }
         StateChanges {
             is_modifier,
@@ -558,25 +573,13 @@ impl WKB {
     /// Client role only. Call after [`Self::update_modifiers`] on key press.
     #[cfg(feature = "client")]
     pub fn compose(&mut self, evdev_code: u32) -> Option<ComposeState> {
-        let is_compose_key =
-            self.layouts[self.current_layout_idx]
-                .modifiers
-                .iter()
-                .any(|(code, modifier)| {
-                    *code == evdev_code
-                        && match modifier {
-                            Modifier::Single(modifier) => modifier.has_mod_type(ModType::Compose),
-                            Modifier::Leveled(levels) => levels
-                                .iter()
-                                .any(|(_, modifier)| modifier.has_mod_type(ModType::Compose)),
-                        }
-                });
-        let token = if is_compose_key {
+        let kb_layout = &self.layouts[self.current_layout_idx];
+        let token = if kb_layout.modifiers.key_is_compose(evdev_code) {
             Token::Compose
         } else if let Some(c) = self.key_char(evdev_code) {
             Token::Char(c)
         } else {
-            return self.layouts[self.current_layout_idx].composer.buffer()
+            return kb_layout.composer.buffer();
         };
         Some(self.layouts[self.current_layout_idx].composer.feed(token))
     }

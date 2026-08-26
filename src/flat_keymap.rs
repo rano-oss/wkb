@@ -1,3 +1,4 @@
+use crate::modifiers::{level_index, Modifiers};
 use crate::named_keys::NamedKey;
 
 /// Maximum number of shift levels.
@@ -42,6 +43,39 @@ impl<T: FlatMapValue> FlatMap<T> {
         } else {
             T::empty()
         }
+    }
+
+    #[inline(always)]
+    pub(crate) fn populated_levels(&self) -> usize {
+        self.data.len() / self.num_keys.max(1)
+    }
+
+    #[inline(always)]
+    pub(crate) fn level_for_modifiers(&self, modifiers: &Modifiers) -> usize {
+        let (_, level2, level3, level5) = modifiers.active_none_and_levels();
+        let levels = self.populated_levels();
+        level_index(
+            level5 && levels > 4,
+            level3 && levels > 2,
+            level2 && levels > 1,
+        )
+    }
+}
+
+impl FlatMap<NamedKey> {
+    #[inline]
+    pub(crate) fn get_with_fallback(&self, level: usize, evdev_code: u32) -> NamedKey {
+        let at = self.get(level, evdev_code);
+        if at != NamedKey::Unnamed || level == 0 {
+            return at;
+        }
+        for l in (0..level).rev() {
+            let named = self.get(l, evdev_code);
+            if named != NamedKey::Unnamed {
+                return named;
+            }
+        }
+        NamedKey::Unnamed
     }
 }
 
