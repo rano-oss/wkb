@@ -71,19 +71,18 @@ function generateSpeedTable() {
     const groups = fs.readdirSync(CRITERION_DIR)
         .filter(d => !d.startsWith('.') && d !== 'report');
 
-    // Criterion stores group names using '/' as directory separators.
-    // The benchmark groups are defined in bench_setup.rs, bench_key.rs, bench_compose.rs.
+    // Criterion stores group names with '/' replaced by '_' (e.g. setup/no_compose → setup_no_compose).
     const interesting = [
-        { dir: 'setup/no_compose',       label: 'Setup (compositor)' },
-        { dir: 'setup/with_compose',     label: 'Setup (client + compose)' },
-        { dir: 'key/update',             label: 'Compositor key update' },
-        { dir: 'key/get_char',           label: 'Compositor get char' },
-        { dir: 'key/get_sym',            label: 'Compositor get keysym' },
-        { dir: 'client/update_modifiers', label: 'Client update_modifiers' },
-        { dir: 'client/get_char',        label: 'Client get char' },
-        { dir: 'client/get_sym',         label: 'Client get keysym' },
-        { dir: 'compose/feed',           label: 'Compose feed' },
-        { dir: 'compose/load',           label: 'Compose load' },
+        { dir: 'setup_no_compose',        label: 'Setup (compositor)' },
+        { dir: 'setup_with_compose',      label: 'Setup (client + compose)' },
+        { dir: 'key_update',              label: 'Compositor key update' },
+        { dir: 'key_get_char',            label: 'Compositor get char' },
+        { dir: 'key_get_sym',             label: 'Compositor get keysym' },
+        { dir: 'client_update_modifiers', label: 'Client update_modifiers' },
+        { dir: 'client_get_char',         label: 'Client get char' },
+        { dir: 'client_get_sym',          label: 'Client get keysym' },
+        { dir: 'compose_feed',            label: 'Compose feed' },
+        { dir: 'compose_load',            label: 'Compose load' },
     ];
 
     const rows = [];
