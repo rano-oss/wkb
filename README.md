@@ -111,25 +111,28 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 ## Benchmarks
 
 <!-- BENCHMARK_START -->
-*Last updated: 2026-08-22 (automated via CI)*
+*Last updated: 2026-08-26 (automated via CI)*
 
 ### Speed
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (no compose) | 887.9 µs | 634.4 µs | 1.42 ms | 1.41 ms | **1.6x faster** |
-| Setup (with compose) | 890.3 µs | 631.1 µs | 2.73 ms | 2.76 ms | **3.1x faster** |
-| Key update | 98 ns | 96 ns | 120 ns | 118 ns | **1.2x faster** |
-| Get char | 97 ns | 97 ns | 184 ns | 172 ns | **1.9x faster** |
-| Get keysym | 98 ns | 98 ns | 140 ns | 135 ns | **1.4x faster** |
-| Compose feed | 287 ns | 285 ns | 332 ns | 312 ns | **1.2x faster** |
+| Setup (compositor) | 1.36 ms | 231.1 µs | 2.22 ms | 2.20 ms | **1.6x faster** |
+| Setup (client + compose) | 1.41 ms | 239.2 µs | 4.06 ms | 4.04 ms | **2.9x faster** |
+| Compositor key update | 156 ns | 153 ns | 175 ns | 177 ns | **1.1x faster** |
+| Compositor get char | 156 ns | 163 ns | 306 ns | 277 ns | **2.0x faster** |
+| Compositor get keysym | 165 ns | 163 ns | 216 ns | 213 ns | **1.3x faster** |
+| Client update_modifiers | 232 ns | 229 ns | - | - |  |
+| Client get char | 243 ns | 243 ns | 323 ns | - | **1.3x faster** |
+| Client get keysym | 240 ns | 240 ns | 214 ns | - | 1.1x slower |
+| Compose feed | 66 ns | 55 ns | 527 ns | 523 ns | **8.0x faster** |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
 | wkb | 4.5 MB |
-| wkb-noxkb | 3.3 MB |
+| wkb-noxkb | 3.1 MB |
 | xkbcommon | 4.8 MB |
 | xkbcommon-dl | 4.8 MB |
 
