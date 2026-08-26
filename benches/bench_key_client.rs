@@ -13,48 +13,42 @@ fn cfg() -> Criterion {
         .sample_size(50)
 }
 
-macro_rules! bench_xkb {
+/// xkbcommon client path: compositor state update + client state sync.
+macro_rules! bench_xkb_client {
     ($group:expr, $bid:expr, $locale:expr, $variant:expr, $case:expr, $body:expr) => {{
-        use xkbcommon::xkb;
-        let (_ctx, _km, mut st) = xkbcommon_setup($locale, $variant);
+        let (_ctx, _km, mut comp_st, mut client_st) = xkbcommon_dual_setup($locale, $variant);
         let case_keys = $case.keys;
         $group.bench_function(BenchmarkId::new("xkbcommon", &$bid), |b| {
             b.iter(|| {
                 for &(code, down) in case_keys {
-                    let kc = xkb::Keycode::new(code + EVDEV_OFFSET);
-                    let dir = if down {
-                        xkb::KeyDirection::Down
-                    } else {
-                        xkb::KeyDirection::Up
-                    };
+                    xkb_update_key(&mut comp_st, code, down);
+                    sync_xkb_client_state(&comp_st, &mut client_st);
                     #[allow(clippy::redundant_closure_call)]
-                    ($body)(&mut st, kc, down, dir);
+                    ($body)(&mut client_st, code, down);
                 }
             });
         });
     }};
 }
 
-macro_rules! bench_dl {
+/// xkbcommon-dl client path: compositor state update + client state sync.
+macro_rules! bench_dl_client {
     ($group:expr, $bid:expr, $locale:expr, $variant:expr, $case:expr, $body:expr) => {{
-        let (xkb, ctx, km, st) = xkbcommon_dl_setup($locale, $variant);
+        let (xkb, ctx, km, comp_st, client_st) = xkbcommon_dl_dual_setup($locale, $variant);
         let case_keys = $case.keys;
         $group.bench_function(BenchmarkId::new("xkbcommon-dl", &$bid), |b| {
             b.iter(|| {
                 for &(code, down) in case_keys {
-                    let kc = code + EVDEV_OFFSET;
-                    let dir = if down {
-                        xkbcommon_dl::xkb_key_direction::XKB_KEY_DOWN
-                    } else {
-                        xkbcommon_dl::xkb_key_direction::XKB_KEY_UP
-                    };
+                    xkb_update_key_dl(xkb, comp_st, code, down);
+                    sync_xkb_client_state_dl(xkb, comp_st, client_st);
                     #[allow(clippy::redundant_closure_call)]
-                    ($body)(xkb, st, kc, down, dir);
+                    ($body)(xkb, client_st, code, down);
                 }
             });
         });
         unsafe {
-            (xkb.xkb_state_unref)(st);
+            (xkb.xkb_state_unref)(client_st);
+            (xkb.xkb_state_unref)(comp_st);
             (xkb.xkb_keymap_unref)(km);
             (xkb.xkb_context_unref)(ctx);
         }
@@ -69,14 +63,14 @@ fn bench_client_update_modifiers(c: &mut Criterion) {
         for (lid, locale, variant) in layouts_for_case(case.name) {
             let bid = format!("{lid}/{}", case.name);
             let mut wb = wkb_setup(locale, variant);
-            let (_, _, mut xkb_st) = xkbcommon_setup(locale, variant);
+            let (_, _, mut comp_st) = xkbcommon_setup(locale, variant);
             let case_keys = case.keys;
 
             group.bench_function(BenchmarkId::new("wkb", &bid), |b| {
                 b.iter(|| {
                     for &(code, down) in case_keys {
-                        xkb_update_key(&mut xkb_st, code, down);
-                        sync_client_modifiers(&mut wb, &xkb_st);
+                        xkb_update_key(&mut comp_st, code, down);
+                        sync_client_modifiers(&mut wb, &comp_st);
                         black_box(code);
                     }
                 });
@@ -86,41 +80,25 @@ fn bench_client_update_modifiers(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new("wkb-noxkb", &bid), |b| {
                 b.iter(|| {
                     for &(code, down) in case_keys {
-                        xkb_update_key(&mut xkb_st, code, down);
-                        sync_client_modifiers(&mut wb, &xkb_st);
+                        xkb_update_key(&mut comp_st, code, down);
+                        sync_client_modifiers(&mut wb, &comp_st);
                         black_box(code);
                     }
                 });
             });
 
-            // xkbcommon has no client-side update_modifiers; compare compositor-side
-            // state update (what drives modifier sync over the wire).
-            bench_xkb!(
-                group,
-                bid,
-                locale,
-                variant,
-                case,
-                |st: &mut xkbcommon::xkb::State,
-                 kc: xkbcommon::xkb::Keycode,
-                 _down: bool,
-                 dir: xkbcommon::xkb::KeyDirection| {
-                    black_box(st.update_key(kc, dir));
-                }
-            );
+            bench_xkb_client!(group, bid, locale, variant, case, |_client_st: &mut xkbcommon::xkb::State, code, _down| {
+                black_box(code);
+            });
 
-            bench_dl!(
+            bench_dl_client!(
                 group,
                 bid,
                 locale,
                 variant,
                 case,
-                |xkb: &xkbcommon_dl::XkbCommon,
-                 st: *mut xkbcommon_dl::xkb_state,
-                 kc: u32,
-                 _down: bool,
-                 dir: xkbcommon_dl::xkb_key_direction| {
-                    black_box(unsafe { (xkb.xkb_state_update_key)(st, kc, dir) });
+                |_xkb: &xkbcommon_dl::XkbCommon, _client_st: *mut xkbcommon_dl::xkb_state, code, _down| {
+                    black_box(code);
                 }
             );
         }
@@ -137,14 +115,14 @@ fn bench_client_get_char(c: &mut Criterion) {
         for (lid, locale, variant) in layouts_for_case(case.name) {
             let bid = format!("{lid}/{}", case.name);
             let mut wb = wkb_setup(locale, variant);
-            let (_, _, mut xkb_st) = xkbcommon_setup(locale, variant);
+            let (_, _, mut comp_st) = xkbcommon_setup(locale, variant);
             let case_keys = case.keys;
 
             group.bench_function(BenchmarkId::new("wkb", &bid), |b| {
                 b.iter(|| {
                     for &(code, down) in case_keys {
-                        xkb_update_key(&mut xkb_st, code, down);
-                        sync_client_modifiers(&mut wb, &xkb_st);
+                        xkb_update_key(&mut comp_st, code, down);
+                        sync_client_modifiers(&mut wb, &comp_st);
                         if down {
                             black_box(wb.key_char(black_box(code)));
                         }
@@ -156,8 +134,8 @@ fn bench_client_get_char(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new("wkb-noxkb", &bid), |b| {
                 b.iter(|| {
                     for &(code, down) in case_keys {
-                        xkb_update_key(&mut xkb_st, code, down);
-                        sync_client_modifiers(&mut wb, &xkb_st);
+                        xkb_update_key(&mut comp_st, code, down);
+                        sync_client_modifiers(&mut wb, &comp_st);
                         if down {
                             black_box(wb.key_char(black_box(code)));
                         }
@@ -165,41 +143,28 @@ fn bench_client_get_char(c: &mut Criterion) {
                 });
             });
 
-            bench_xkb!(
-                group,
-                bid,
-                locale,
-                variant,
-                case,
-                |st: &mut xkbcommon::xkb::State,
-                 kc: xkbcommon::xkb::Keycode,
-                 down: bool,
-                 dir: xkbcommon::xkb::KeyDirection| {
-                    st.update_key(kc, dir);
-                    if down {
-                        black_box(st.key_get_utf8(black_box(kc)));
-                    }
+            bench_xkb_client!(group, bid, locale, variant, case, |client_st: &mut xkbcommon::xkb::State, code, down| {
+                use xkbcommon::xkb;
+                if down {
+                    let kc = xkb::Keycode::new(code + EVDEV_OFFSET);
+                    black_box(client_st.key_get_utf8(black_box(kc)));
                 }
-            );
+            });
 
             {
-                let (xkb, ctx, km, st) = xkbcommon_dl_setup(locale, variant);
+                let (xkb, ctx, km, comp_st, client_st) = xkbcommon_dl_dual_setup(locale, variant);
                 let case_keys = case.keys;
                 let mut buf = [0u8; 64];
                 group.bench_function(BenchmarkId::new("xkbcommon-dl", &bid), |b| {
                     b.iter(|| {
                         for &(code, down) in case_keys {
-                            let kc = code + EVDEV_OFFSET;
-                            let dir = if down {
-                                xkbcommon_dl::xkb_key_direction::XKB_KEY_DOWN
-                            } else {
-                                xkbcommon_dl::xkb_key_direction::XKB_KEY_UP
-                            };
-                            unsafe { (xkb.xkb_state_update_key)(st, kc, dir) };
+                            xkb_update_key_dl(xkb, comp_st, code, down);
+                            sync_xkb_client_state_dl(xkb, comp_st, client_st);
                             if down {
+                                let kc = code + EVDEV_OFFSET;
                                 black_box(unsafe {
                                     (xkb.xkb_state_key_get_utf8)(
-                                        st,
+                                        client_st,
                                         black_box(kc),
                                         buf.as_mut_ptr() as *mut c_char,
                                         buf.len(),
@@ -210,7 +175,8 @@ fn bench_client_get_char(c: &mut Criterion) {
                     });
                 });
                 unsafe {
-                    (xkb.xkb_state_unref)(st);
+                    (xkb.xkb_state_unref)(client_st);
+                    (xkb.xkb_state_unref)(comp_st);
                     (xkb.xkb_keymap_unref)(km);
                     (xkb.xkb_context_unref)(ctx);
                 }
@@ -229,14 +195,14 @@ fn bench_client_get_sym(c: &mut Criterion) {
         for (lid, locale, variant) in layouts_for_case(case.name) {
             let bid = format!("{lid}/{}", case.name);
             let mut wb = wkb_setup(locale, variant);
-            let (_, _, mut xkb_st) = xkbcommon_setup(locale, variant);
+            let (_, _, mut comp_st) = xkbcommon_setup(locale, variant);
             let case_keys = case.keys;
 
             group.bench_function(BenchmarkId::new("wkb", &bid), |b| {
                 b.iter(|| {
                     for &(code, down) in case_keys {
-                        xkb_update_key(&mut xkb_st, code, down);
-                        sync_client_modifiers(&mut wb, &xkb_st);
+                        xkb_update_key(&mut comp_st, code, down);
+                        sync_client_modifiers(&mut wb, &comp_st);
                         if down {
                             black_box(wb.named_key(black_box(code)));
                         }
@@ -248,8 +214,8 @@ fn bench_client_get_sym(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new("wkb-noxkb", &bid), |b| {
                 b.iter(|| {
                     for &(code, down) in case_keys {
-                        xkb_update_key(&mut xkb_st, code, down);
-                        sync_client_modifiers(&mut wb, &xkb_st);
+                        xkb_update_key(&mut comp_st, code, down);
+                        sync_client_modifiers(&mut wb, &comp_st);
                         if down {
                             black_box(wb.named_key(black_box(code)));
                         }
@@ -257,40 +223,20 @@ fn bench_client_get_sym(c: &mut Criterion) {
                 });
             });
 
-            bench_xkb!(
-                group,
-                bid,
-                locale,
-                variant,
-                case,
-                |st: &mut xkbcommon::xkb::State,
-                 kc: xkbcommon::xkb::Keycode,
-                 down: bool,
-                 dir: xkbcommon::xkb::KeyDirection| {
-                    st.update_key(kc, dir);
-                    if down {
-                        black_box(st.key_get_one_sym(black_box(kc)));
-                    }
+            bench_xkb_client!(group, bid, locale, variant, case, |client_st: &mut xkbcommon::xkb::State, code, down| {
+                use xkbcommon::xkb;
+                if down {
+                    let kc = xkb::Keycode::new(code + EVDEV_OFFSET);
+                    black_box(client_st.key_get_one_sym(black_box(kc)));
                 }
-            );
+            });
 
-            bench_dl!(
-                group,
-                bid,
-                locale,
-                variant,
-                case,
-                |xkb: &xkbcommon_dl::XkbCommon,
-                 st: *mut xkbcommon_dl::xkb_state,
-                 kc: u32,
-                 down: bool,
-                 dir: xkbcommon_dl::xkb_key_direction| {
-                    unsafe { (xkb.xkb_state_update_key)(st, kc, dir) };
-                    if down {
-                        black_box(unsafe { (xkb.xkb_state_key_get_one_sym)(st, black_box(kc)) });
-                    }
+            bench_dl_client!(group, bid, locale, variant, case, |xkb: &xkbcommon_dl::XkbCommon, client_st: *mut xkbcommon_dl::xkb_state, code, down| {
+                if down {
+                    let kc = code + EVDEV_OFFSET;
+                    black_box(unsafe { (xkb.xkb_state_key_get_one_sym)(client_st, black_box(kc)) });
                 }
-            );
+            });
         }
     }
 

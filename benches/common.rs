@@ -80,6 +80,108 @@ pub fn xkb_update_key(st: &mut xkbcommon::xkb::State, evdev: u32, down: bool) {
 }
 
 #[cfg(feature = "xkb")]
+pub fn serialized_modifiers(state: &xkbcommon::xkb::State) -> (u32, u32, u32, u32) {
+    use xkbcommon::xkb;
+    (
+        state.serialize_mods(xkb::STATE_MODS_DEPRESSED),
+        state.serialize_mods(xkb::STATE_MODS_LATCHED),
+        state.serialize_mods(xkb::STATE_MODS_LOCKED),
+        state.serialize_layout(xkb::STATE_LAYOUT_EFFECTIVE),
+    )
+}
+
+/// Apply compositor modifier state to a separate client `xkb::State`, matching
+/// what a Wayland client does via `xkb_state_update_mask`.
+#[cfg(feature = "xkb")]
+pub fn sync_xkb_client_state(comp: &xkbcommon::xkb::State, client: &mut xkbcommon::xkb::State) {
+    let (depressed, latched, locked, layout) = serialized_modifiers(comp);
+    client.update_mask(depressed, latched, locked, layout, layout, layout);
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_dual_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    xkbcommon::xkb::Context,
+    xkbcommon::xkb::Keymap,
+    xkbcommon::xkb::State,
+    xkbcommon::xkb::State,
+) {
+    use xkbcommon::xkb;
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let km = xkb::Keymap::new_from_names(
+        &ctx,
+        "evdev",
+        "",
+        locale,
+        variant.unwrap_or(""),
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon keymap");
+    let comp_st = xkb::State::new(&km);
+    let client_st = xkb::State::new(&km);
+    (ctx, km, comp_st, client_st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_dl_dual_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    &'static xkbcommon_dl::XkbCommon,
+    *mut xkbcommon_dl::xkb_context,
+    *mut xkbcommon_dl::xkb_keymap,
+    *mut xkbcommon_dl::xkb_state,
+    *mut xkbcommon_dl::xkb_state,
+) {
+    let (xkb, ctx, km, comp_st) = xkbcommon_dl_setup(locale, variant);
+    let client_st = unsafe { (xkb.xkb_state_new)(km) };
+    (xkb, ctx, km, comp_st, client_st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkb_update_key_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    st: *mut xkbcommon_dl::xkb_state,
+    evdev: u32,
+    down: bool,
+) {
+    let kc = evdev + EVDEV_OFFSET;
+    let dir = if down {
+        xkbcommon_dl::xkb_key_direction::XKB_KEY_DOWN
+    } else {
+        xkbcommon_dl::xkb_key_direction::XKB_KEY_UP
+    };
+    unsafe { (xkb.xkb_state_update_key)(st, kc, dir) };
+}
+
+#[cfg(feature = "xkb")]
+pub fn sync_xkb_client_state_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    comp: *mut xkbcommon_dl::xkb_state,
+    client: *mut xkbcommon_dl::xkb_state,
+) {
+    use xkbcommon_dl::xkb_state_component;
+    let depressed = unsafe {
+        (xkb.xkb_state_serialize_mods)(comp, xkb_state_component::XKB_STATE_MODS_DEPRESSED)
+    };
+    let latched = unsafe {
+        (xkb.xkb_state_serialize_mods)(comp, xkb_state_component::XKB_STATE_MODS_LATCHED)
+    };
+    let locked = unsafe {
+        (xkb.xkb_state_serialize_mods)(comp, xkb_state_component::XKB_STATE_MODS_LOCKED)
+    };
+    let layout = unsafe {
+        (xkb.xkb_state_serialize_layout)(comp, xkb_state_component::XKB_STATE_LAYOUT_EFFECTIVE)
+    };
+    unsafe {
+        (xkb.xkb_state_update_mask)(client, depressed, latched, locked, layout, layout, layout);
+    }
+}
+
+#[cfg(feature = "xkb")]
 pub fn xkbcommon_dl_setup(
     locale: &str,
     variant: Option<&str>,
@@ -151,13 +253,8 @@ pub fn layouts_for_case(case_name: &str) -> Vec<(String, &'static str, Option<&'
 /// Mirror compositor modifier state into a client `WKB` via `update_modifiers`.
 #[cfg(feature = "client")]
 pub fn sync_client_modifiers(wkb: &mut wkb::WKB, state: &xkbcommon::xkb::State) {
-    use xkbcommon::xkb;
-    wkb.update_modifiers(
-        state.serialize_mods(xkb::STATE_MODS_DEPRESSED),
-        state.serialize_mods(xkb::STATE_MODS_LATCHED),
-        state.serialize_mods(xkb::STATE_MODS_LOCKED),
-        state.serialize_layout(xkb::STATE_LAYOUT_EFFECTIVE),
-    );
+    let (depressed, latched, locked, layout) = serialized_modifiers(state);
+    wkb.update_modifiers(depressed, latched, locked, layout);
 }
 // ── Locales & layouts ──────────────────────────────────────────────────
 /// Primary layout — used for all key cases.
