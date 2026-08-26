@@ -304,7 +304,7 @@ impl Modifiers {
 
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         match mod_type {
-            ModType::None => self.effective() & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0,
+            ModType::None => self.none_active(),
             ModType::Level2 => self.effective() & MOD_SHIFT != 0,
             ModType::Level3 => self.effective() & MOD_ALTGR != 0,
             ModType::Level5 => self.effective() & MOD_SCROLL_LOCK != 0,
@@ -323,11 +323,14 @@ impl Modifiers {
     }
 
     #[inline(always)]
-    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
-        let effective = self.raw.depressed | self.raw.latched | self.raw.locked;
+    pub fn none_active(&self) -> bool {
+        self.effective() & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0
+    }
 
+    #[inline(always)]
+    pub fn active_levels(&self) -> (bool, bool, bool) {
+        let effective = self.effective();
         (
-            effective & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0,
             effective & MOD_SHIFT != 0,
             effective & MOD_ALTGR != 0,
             effective & MOD_SCROLL_LOCK != 0,
@@ -363,7 +366,7 @@ impl Modifiers {
         };
         let is_leveled = matches!(&self.entries[position].1, Modifier::Leveled(_));
         let is_modifier = if is_leveled {
-            let (_, level2, level3, level5) = self.active_none_and_levels();
+            let (level2, level3, level5) = self.active_levels();
 
             let level = level_index(level5, level3, level2) as u8;
 

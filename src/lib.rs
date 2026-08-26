@@ -433,8 +433,7 @@ impl WKB {
     /// shortcut chords as typed text.
     pub fn key_char(&self, evdev_code: u32) -> Option<char> {
         let kb_layout = &self.layouts[self.current_layout_idx];
-        let (none_active, _, _, _) = kb_layout.modifiers.active_none_and_levels();
-        if none_active {
+        if kb_layout.modifiers.none_active() {
             return None;
         }
         let base_level = kb_layout

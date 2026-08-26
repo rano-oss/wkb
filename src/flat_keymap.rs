@@ -52,7 +52,7 @@ impl<T: FlatMapValue> FlatMap<T> {
 
     #[inline(always)]
     pub(crate) fn level_for_modifiers(&self, modifiers: &Modifiers) -> usize {
-        let (_, level2, level3, level5) = modifiers.active_none_and_levels();
+        let (level2, level3, level5) = modifiers.active_levels();
         let levels = self.populated_levels();
         level_index(
             level5 && levels > 4,
