@@ -205,50 +205,48 @@ impl WKB {
             .state(self.current_layout_idx)
     }
 
+    #[inline]
+    fn mod_active(&self, mask: u32) -> bool {
+        let raw = self.raw_modifiers();
+        (raw.depressed | raw.latched | raw.locked) & mask != 0
+    }
+
     /// Return `true` if the Shift modifier is active.
     pub fn shift(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SHIFT != 0
+        self.mod_active(modifiers::MOD_SHIFT)
     }
 
     /// Return `true` if the Control modifier is active.
     pub fn ctrl(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_CTRL != 0
+        self.mod_active(modifiers::MOD_CTRL)
     }
 
     /// Return `true` if the Alt modifier is active.
     pub fn alt(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_ALT != 0
+        self.mod_active(modifiers::MOD_ALT)
     }
 
     /// Return `true` if the Logo (Super/Windows) modifier is active.
     pub fn logo(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_LOGO != 0
+        self.mod_active(modifiers::MOD_LOGO)
     }
 
     /// Return `true` if Caps Lock is active.
     pub fn caps_lock(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_CAPS_LOCK != 0
+        self.mod_active(modifiers::MOD_CAPS_LOCK)
     }
 
     /// Return `true` if Num Lock is active.
     pub fn num_lock(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_NUM_LOCK != 0
+        self.mod_active(modifiers::MOD_NUM_LOCK)
     }
 
     pub fn level3(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_ALTGR != 0
+        self.mod_active(modifiers::MOD_ALTGR)
     }
 
     pub fn level5(&self) -> bool {
-        let raw = self.raw_modifiers();
-        (raw.depressed | raw.latched | raw.locked) & modifiers::MOD_SCROLL_LOCK != 0
+        self.mod_active(modifiers::MOD_SCROLL_LOCK)
     }
 
     /// Apply modifier state received from `wl_keyboard.modifiers`.
@@ -445,40 +443,9 @@ impl WKB {
     /// Return the keycode (and optional level) for the given modifier type.
     #[doc(hidden)]
     pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        let modifiers = &self.layouts[self.current_layout_idx].modifiers;
-        let mut other_mod = None;
-
-        for (code, modifier) in modifiers.iter() {
-            match modifier {
-                Modifier::Single(state_modifier) => {
-                    if state_modifier.has_mod_type(mod_type) {
-                        match state_modifier.kind {
-                            ModKind::Press { .. } => return Some((*code, None)),
-                            _ => {
-                                if other_mod.is_none() {
-                                    other_mod = Some((*code, None));
-                                }
-                            }
-                        }
-                    }
-                }
-                Modifier::Leveled(map) => {
-                    for (level, state_modifier) in map {
-                        if state_modifier.has_mod_type(mod_type) {
-                            match state_modifier.kind {
-                                ModKind::Press { .. } => return Some((*code, Some(*level))),
-                                _ => {
-                                    if other_mod.is_none() {
-                                        other_mod = Some((*code, Some(*level)));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        other_mod
+        self.layouts[self.current_layout_idx]
+            .modifiers
+            .level_code(mod_type)
     }
 
     /// Designate an evdev keycode as the Compose (Multi_key) key.
@@ -546,11 +513,9 @@ impl WKB {
                 .update(raw.depressed, raw.latched, raw.locked);
             self.current_layout_idx = new_layout;
         }
-        if !is_modifier && key_direction == KeyDirection::Down {
-            let modifiers = &mut self.layouts[self.current_layout_idx].modifiers;
-            if modifiers.has_latched() {
-                modifiers.unlatch();
-            }
+        if !is_modifier && key_direction == KeyDirection::Down && self.raw_modifiers().latched != 0
+        {
+            self.layouts[self.current_layout_idx].modifiers.unlatch();
         }
         StateChanges {
             is_modifier,
@@ -565,7 +530,11 @@ impl WKB {
     #[cfg(feature = "client")]
     pub fn compose(&mut self, evdev_code: u32) -> Option<ComposeState> {
         let kb_layout = &self.layouts[self.current_layout_idx];
-        let token = if kb_layout.modifiers.key_is_compose(evdev_code) {
+        let token = if kb_layout
+            .modifiers
+            .get(evdev_code)
+            .is_some_and(|modifier| modifier.has_mod_type(ModType::Compose))
+        {
             Token::Compose
         } else if let Some(c) = self.key_char(evdev_code) {
             Token::Char(c)

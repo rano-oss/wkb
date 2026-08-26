@@ -79,6 +79,75 @@ pub fn xkb_update_key(st: &mut xkbcommon::xkb::State, evdev: u32, down: bool) {
     st.update_key(kc, dir);
 }
 
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_dl_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    &'static xkbcommon_dl::XkbCommon,
+    *mut xkbcommon_dl::xkb_context,
+    *mut xkbcommon_dl::xkb_keymap,
+    *mut xkbcommon_dl::xkb_state,
+) {
+    use std::ffi::CString;
+    use std::os::raw::c_char;
+    use std::ptr;
+
+    let xkb = xkbcommon_dl::xkbcommon_handle();
+    let ctx =
+        unsafe { (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS) };
+    let c_rules = CString::new("evdev").unwrap();
+    let c_layout = CString::new(locale).unwrap();
+    let c_variant = variant.map(|v| CString::new(v).unwrap());
+    let names = xkbcommon_dl::xkb_rule_names {
+        rules: c_rules.as_ptr(),
+        model: ptr::null(),
+        layout: c_layout.as_ptr(),
+        variant: c_variant.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
+        options: ptr::null::<c_char>(),
+    };
+    let km = unsafe {
+        (xkb.xkb_keymap_new_from_names)(
+            ctx,
+            &names,
+            xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
+        )
+    };
+    let st = unsafe { (xkb.xkb_state_new)(km) };
+    (xkb, ctx, km, st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
+    wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap()
+}
+
+#[cfg(feature = "xkb")]
+pub fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
+    wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap()
+}
+
+#[cfg(feature = "xkb")]
+pub fn ensure_noxkb_fixtures() {
+    let (pl, pv) = PRIMARY_LAYOUT;
+    ensure_layout_file(pl, pv);
+    for &(l, v) in EXTRA_LAYOUTS {
+        ensure_layout_file(l, v);
+    }
+}
+
+#[cfg(feature = "xkb")]
+pub fn layouts_for_case(case_name: &str) -> Vec<(String, &'static str, Option<&'static str>)> {
+    let (pl, pv) = PRIMARY_LAYOUT;
+    let mut out = vec![(pv.map_or(pl.to_string(), |v| format!("{pl}_{v}")), pl, pv)];
+    if LAYOUT_SENSITIVE_CASES.contains(&case_name) {
+        for &(l, v) in EXTRA_LAYOUTS {
+            out.push((v.map_or(l.to_string(), |vv| format!("{l}_{vv}")), l, v));
+        }
+    }
+    out
+}
+
 /// Mirror compositor modifier state into a client `WKB` via `update_modifiers`.
 #[cfg(feature = "client")]
 pub fn sync_client_modifiers(wkb: &mut wkb::WKB, state: &xkbcommon::xkb::State) {

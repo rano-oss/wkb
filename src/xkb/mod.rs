@@ -28,40 +28,6 @@ pub enum XkbError {
     #[error("Failed to parse keymap string")]
     KeymapParsing,
 }
-pub(crate) fn level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-    let mut other_mod = None;
-    for (code, modifier) in modifiers.iter() {
-        match modifier {
-            Modifier::Single(state_modifier) => {
-                if state_modifier.has_mod_type(mod_type) {
-                    match state_modifier.kind {
-                        ModKind::Press { .. } => return Some((*code, None)),
-                        _ => {
-                            if other_mod.is_none() {
-                                other_mod = Some((*code, None));
-                            }
-                        }
-                    }
-                }
-            }
-            Modifier::Leveled(map) => {
-                for (level, state_modifier) in map {
-                    if state_modifier.has_mod_type(mod_type) {
-                        match state_modifier.kind {
-                            ModKind::Press { .. } => return Some((*code, Some(*level))),
-                            _ => {
-                                if other_mod.is_none() {
-                                    other_mod = Some((*code, Some(*level)));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-    }
-    other_mod
-}
 const REAL_MOD_STATES: usize = parser::MOD_REAL_MASK_ALL as usize + 1;
 #[derive(Clone, Copy, Default)]
 struct CompiledTypeState {
@@ -361,8 +327,8 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         level2_mask | level3_mask | level5_mask,
     ];
     let groups = build_groups_from_keymap(keymap);
-    let caps_kc = level_code(&modifiers, ModType::Caps).map(|(code, _)| code + EVDEV_OFFSET);
-    let num_kc = level_code(&modifiers, ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
+    let caps_kc = modifiers.level_code(ModType::Caps).map(|(code, _)| code + EVDEV_OFFSET);
+    let num_kc = modifiers.level_code(ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
     let caps_active = lock_activation(keymap, &compiled_types, caps_kc, 0xffe5, &level_masks);
     let num_active = lock_activation(keymap, &compiled_types, num_kc, 0xff7f, &level_masks);
     #[cfg(feature = "client")]

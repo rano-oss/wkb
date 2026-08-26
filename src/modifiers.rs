@@ -264,19 +264,6 @@ impl Modifiers {
     }
 
     #[inline]
-    #[cfg(feature = "client")]
-    pub(crate) fn key_is_compose(&self, evdev_code: u32) -> bool {
-        self.get(evdev_code)
-            .is_some_and(|modifier| modifier.has_mod_type(ModType::Compose))
-    }
-
-    #[inline]
-    #[cfg(feature = "compositor")]
-    pub(crate) fn has_latched(&self) -> bool {
-        self.raw.latched != 0
-    }
-
-    #[inline]
     pub fn iter(&self) -> impl Iterator<Item = (&u32, &Modifier)> {
         self.entries.iter().map(|(c, m)| (c, m))
     }
@@ -330,6 +317,43 @@ impl Modifiers {
             effective & MOD_ALTGR != 0,
             effective & MOD_SCROLL_LOCK != 0,
         )
+    }
+
+    /// Return the keycode (and optional level) for the given modifier type.
+    pub(crate) fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+        let mut other_mod = None;
+
+        for (code, modifier) in self.iter() {
+            match modifier {
+                Modifier::Single(state_modifier) => {
+                    if state_modifier.has_mod_type(mod_type) {
+                        match state_modifier.kind {
+                            ModKind::Press { .. } => return Some((*code, None)),
+                            _ => {
+                                if other_mod.is_none() {
+                                    other_mod = Some((*code, None));
+                                }
+                            }
+                        }
+                    }
+                }
+                Modifier::Leveled(map) => {
+                    for (level, state_modifier) in map {
+                        if state_modifier.has_mod_type(mod_type) {
+                            match state_modifier.kind {
+                                ModKind::Press { .. } => return Some((*code, Some(*level))),
+                                _ => {
+                                    if other_mod.is_none() {
+                                        other_mod = Some((*code, Some(*level)));
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+        other_mod
     }
 
     #[inline]
