@@ -108,7 +108,7 @@ function generateSpeedTable() {
                 vals[impl_] = readEstimates(gpath, impl_);
             }
         }
-        if (!vals['wkb']) continue;
+        if (!vals['wkb'] || !vals['xkbcommon']) continue;
 
         const row = [
             label,
