@@ -33,9 +33,10 @@ fn bench_compose_feed(c: &mut Criterion) {
                 wb.set_compose_key(COMPOSE_KEY);
                 wb
             };
+            let (_, _, mut comp_st) = xkbcommon_setup("us", None);
             group.bench_function(BenchmarkId::new("wkb", case.name), |b| {
                 b.iter(|| {
-                    black_box(wkb_feed_compose(&mut wb, case.keys));
+                    black_box(wkb_feed_compose(&mut wb, &mut comp_st, case.keys));
                 });
             });
         }
@@ -44,14 +45,15 @@ fn bench_compose_feed(c: &mut Criterion) {
         {
             let mut wb = WKB::new_from_layouts(vec![load_layout_file("us", None)]).unwrap();
             wb.set_compose_key(COMPOSE_KEY);
+            let (_, _, mut comp_st) = xkbcommon_setup("us", None);
             group.bench_function(BenchmarkId::new("wkb-noxkb", case.name), |b| {
                 b.iter(|| {
-                    black_box(wkb_feed_compose(&mut wb, case.keys));
+                    black_box(wkb_feed_compose(&mut wb, &mut comp_st, case.keys));
                 });
             });
         }
 
-        // xkbcommon: keymap state + compose state driven by the same events.
+        // xkbcommon: compositor key events + client state sync + compose feed.
         {
             use xkbcommon::xkb;
             let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -65,7 +67,8 @@ fn bench_compose_feed(c: &mut Criterion) {
                 xkb::KEYMAP_COMPILE_NO_FLAGS,
             )
             .expect("keymap");
-            let mut state = xkb::State::new(&km);
+            let mut comp_st = xkb::State::new(&km);
+            let mut client_st = xkb::State::new(&km);
             let table = xkb::compose::Table::new_from_locale(
                 &ctx,
                 std::ffi::OsStr::new(COMPOSE_LOCALE),
@@ -77,7 +80,8 @@ fn bench_compose_feed(c: &mut Criterion) {
             group.bench_function(BenchmarkId::new("xkbcommon", case.name), |b| {
                 b.iter(|| {
                     black_box(xkb_feed_compose(
-                        &mut state,
+                        &mut comp_st,
+                        &mut client_st,
                         &mut compose,
                         case.keys,
                         compose_kc,
@@ -86,29 +90,10 @@ fn bench_compose_feed(c: &mut Criterion) {
             });
         }
 
-        // xkbcommon-dl: same flow through the dynamic-loader FFI.
+        // xkbcommon-dl: same Wayland client flow through the dynamic-loader FFI.
         {
-            let xkb = xkbcommon_dl::xkbcommon_handle();
             let xkb_compose = xkbcommon_dl::xkbcommon_compose_handle();
-            let ctx = unsafe {
-                (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS)
-            };
-            let c_layout = CString::new("us").unwrap();
-            let names = xkbcommon_dl::xkb_rule_names {
-                rules: c"evdev".as_ptr(),
-                model: std::ptr::null(),
-                layout: c_layout.as_ptr(),
-                variant: std::ptr::null(),
-                options: std::ptr::null(),
-            };
-            let km = unsafe {
-                (xkb.xkb_keymap_new_from_names)(
-                    ctx,
-                    &names,
-                    xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
-                )
-            };
-            let st = unsafe { (xkb.xkb_state_new)(km) };
+            let (xkb, ctx, km, comp_st, client_st) = xkbcommon_dl_dual_setup("us", None);
             let c_locale = CString::new(COMPOSE_LOCALE).unwrap();
             let table = unsafe {
                 (xkb_compose.xkb_compose_table_new_from_locale)(
@@ -127,49 +112,23 @@ fn bench_compose_feed(c: &mut Criterion) {
             let mut utf8_buf = [0u8; 64];
             group.bench_function(BenchmarkId::new("xkbcommon-dl", case.name), |b| {
                 b.iter(|| {
-                    let mut out = None;
-                    for &(evdev, down) in case.keys {
-                        let kc = evdev + EVDEV_OFFSET;
-                        let dir = if down {
-                            xkbcommon_dl::xkb_key_direction::XKB_KEY_DOWN
-                        } else {
-                            xkbcommon_dl::xkb_key_direction::XKB_KEY_UP
-                        };
-                        unsafe { (xkb.xkb_state_update_key)(st, kc, dir) };
-                        if !down {
-                            continue;
-                        }
-                        let sym = unsafe { (xkb.xkb_state_key_get_one_sym)(st, kc) };
-                        if is_modifier_keysym(sym) {
-                            continue;
-                        }
-                        let feed = if kc == compose_kc {
-                            XKB_KEY_MULTI_KEY
-                        } else {
-                            sym
-                        };
-                        unsafe { (xkb_compose.xkb_compose_state_feed)(cs, feed) };
-                        let status = unsafe { (xkb_compose.xkb_compose_state_get_status)(cs) };
-                        if status == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSED {
-                            let n = unsafe {
-                                (xkb_compose.xkb_compose_state_get_utf8)(
-                                    cs,
-                                    utf8_buf.as_mut_ptr() as *mut _,
-                                    utf8_buf.len(),
-                                )
-                            };
-                            out = std::str::from_utf8(&utf8_buf[..n as usize])
-                                .ok()
-                                .and_then(|s| s.chars().next());
-                        }
-                    }
-                    black_box(out);
+                    black_box(xkb_feed_compose_dl(
+                        xkb,
+                        xkb_compose,
+                        comp_st,
+                        client_st,
+                        cs,
+                        case.keys,
+                        compose_kc,
+                        &mut utf8_buf,
+                    ));
                 });
             });
             unsafe {
                 (xkb_compose.xkb_compose_state_unref)(cs);
                 (xkb_compose.xkb_compose_table_unref)(table);
-                (xkb.xkb_state_unref)(st);
+                (xkb.xkb_state_unref)(client_st);
+                (xkb.xkb_state_unref)(comp_st);
                 (xkb.xkb_keymap_unref)(km);
                 (xkb.xkb_context_unref)(ctx);
             }

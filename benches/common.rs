@@ -556,45 +556,50 @@ pub fn is_modifier_keysym(keysym: u32) -> bool {
     (0xffe1..=0xffee).contains(&keysym) || keysym == 0xff7f
 }
 
-/// Feed a compose sequence through `compose` and return the final character.
-#[cfg(feature = "client")]
-pub fn wkb_feed_compose(wkb: &mut wkb::WKB, keys: &[(u32, bool)]) -> Option<char> {
+/// Feed a compose sequence through the Wayland client path: compositor key
+/// events drive reference modifier state, `update_modifiers` syncs the client,
+/// then `compose` runs on key down.
+#[cfg(all(feature = "client", feature = "xkb"))]
+pub fn wkb_feed_compose(
+    wkb: &mut wkb::WKB,
+    comp: &mut xkbcommon::xkb::State,
+    keys: &[(u32, bool)],
+) -> Option<char> {
+    wkb.leave();
     let mut out = None;
     for &(code, down) in keys {
-        if !down {
-            continue;
-        }
-        let result = wkb.compose(code);
-        if let Some(wkb::ComposeState::Finished(c)) = &result {
-            out = Some(*c);
+        xkb_update_key(comp, code, down);
+        sync_client_modifiers(wkb, comp);
+        if down {
+            if let Some(wkb::ComposeState::Finished(c)) = wkb.compose(code) {
+                out = Some(c);
+            }
         }
     }
     out
 }
 
-/// Feed a compose sequence through xkbcommon's keymap state + compose state.
-/// `compose_kc` designates the keycode whose keysym is replaced with
-/// `Multi_key`, mirroring `WKB::set_compose_key` on layouts without one.
+/// Feed a compose sequence through the Wayland client path on xkbcommon:
+/// compositor `update_key`, client `update_mask`, compose feed on key down.
+#[cfg(feature = "xkb")]
 pub fn xkb_feed_compose(
-    state: &mut xkbcommon::xkb::State,
+    comp: &mut xkbcommon::xkb::State,
+    client: &mut xkbcommon::xkb::State,
     compose: &mut xkbcommon::xkb::compose::State,
     keys: &[(u32, bool)],
     compose_kc: xkbcommon::xkb::Keycode,
 ) -> Option<char> {
     use xkbcommon::xkb;
+    compose.reset();
     let mut out = None;
     for &(evdev, down) in keys {
-        let kc = xkb::Keycode::new(evdev + EVDEV_OFFSET);
-        let dir = if down {
-            xkb::KeyDirection::Down
-        } else {
-            xkb::KeyDirection::Up
-        };
-        state.update_key(kc, dir);
+        xkb_update_key(comp, evdev, down);
+        sync_xkb_client_state(comp, client);
         if !down {
             continue;
         }
-        let sym = state.key_get_one_sym(kc);
+        let kc = xkb::Keycode::new(evdev + EVDEV_OFFSET);
+        let sym = client.key_get_one_sym(kc);
         if is_modifier_keysym(sym.raw()) {
             continue;
         }
@@ -606,6 +611,55 @@ pub fn xkb_feed_compose(
         compose.feed(feed);
         if compose.status() == xkb::compose::Status::Composed {
             out = compose.utf8().and_then(|s| s.chars().next());
+        }
+    }
+    out
+}
+
+/// Wayland client compose path through the xkbcommon dynamic-loader FFI.
+#[cfg(feature = "xkb")]
+pub fn xkb_feed_compose_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    xkb_compose: &xkbcommon_dl::XkbCommonCompose,
+    comp: *mut xkbcommon_dl::xkb_state,
+    client: *mut xkbcommon_dl::xkb_state,
+    cs: *mut xkbcommon_dl::xkb_compose_state,
+    keys: &[(u32, bool)],
+    compose_kc: u32,
+    utf8_buf: &mut [u8],
+) -> Option<char> {
+    use std::os::raw::c_char;
+    unsafe { (xkb_compose.xkb_compose_state_reset)(cs) };
+    let mut out = None;
+    for &(evdev, down) in keys {
+        xkb_update_key_dl(xkb, comp, evdev, down);
+        sync_xkb_client_state_dl(xkb, comp, client);
+        if !down {
+            continue;
+        }
+        let kc = evdev + EVDEV_OFFSET;
+        let sym = unsafe { (xkb.xkb_state_key_get_one_sym)(client, kc) };
+        if is_modifier_keysym(sym) {
+            continue;
+        }
+        let feed = if kc == compose_kc {
+            XKB_KEY_MULTI_KEY
+        } else {
+            sym
+        };
+        unsafe { (xkb_compose.xkb_compose_state_feed)(cs, feed) };
+        let status = unsafe { (xkb_compose.xkb_compose_state_get_status)(cs) };
+        if status == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSED {
+            let n = unsafe {
+                (xkb_compose.xkb_compose_state_get_utf8)(
+                    cs,
+                    utf8_buf.as_mut_ptr() as *mut c_char,
+                    utf8_buf.len(),
+                )
+            };
+            out = std::str::from_utf8(&utf8_buf[..n as usize])
+                .ok()
+                .and_then(|s| s.chars().next());
         }
     }
     out

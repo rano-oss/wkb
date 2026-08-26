@@ -96,21 +96,15 @@ fn run_workload_wkb_xkb() -> u64 {
         }
     }
 
-    // Compose workload (client path: compose only).
+    // Compose workload (Wayland client path).
     unsafe { std::env::set_var("LC_ALL", COMPOSE_LOCALE) };
     let mut wb = WKB::new_from_names("", "", "us", "", None).unwrap();
     wb.set_compose_key(COMPOSE_KEY);
+    let (_, _, mut comp_st) = xkbcommon_setup("us", None);
     for case in COMPOSE_CASES {
         for _ in 0..HOT_PATH_ITERATIONS {
-            for &(code, down) in case.keys {
-                if down {
-                    let result = wb.compose(code);
-                    if let Some(wkb::ComposeState::Finished(c)) = &result {
-                        checksum = checksum.wrapping_add(*c as u64);
-                    }
-                    black_box(result);
-                }
-            }
+            let c = wkb_feed_compose(&mut wb, &mut comp_st, case.keys);
+            checksum = checksum.wrapping_add(c.map_or(0, |c| c as u64));
         }
     }
 
@@ -173,14 +167,20 @@ fn run_workload_xkbcommon() -> u64 {
             xkb::KEYMAP_COMPILE_NO_FLAGS,
         )
         .expect("keymap");
-        let mut state = xkb::State::new(&km);
+        let mut comp_st = xkb::State::new(&km);
+        let mut client_st = xkb::State::new(&km);
         let mut compose = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
         let compose_kc = xkb::Keycode::new(COMPOSE_KEY + EVDEV_OFFSET);
         for case in COMPOSE_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
-                let c = xkb_feed_compose(&mut state, &mut compose, case.keys, compose_kc);
+                let c = xkb_feed_compose(
+                    &mut comp_st,
+                    &mut client_st,
+                    &mut compose,
+                    case.keys,
+                    compose_kc,
+                );
                 checksum = checksum.wrapping_add(c.map_or(0, |c| c as u64));
-                compose.reset();
             }
         }
     }
@@ -398,14 +398,20 @@ fn run_workload_xkbcommon_compat() -> u64 {
             xkb::KEYMAP_COMPILE_NO_FLAGS,
         )
         .expect("keymap");
-        let mut state = xkb::State::new(&km);
+        let mut comp_st = xkb::State::new(&km);
+        let mut client_st = xkb::State::new(&km);
         let mut compose = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
         let compose_kc = xkb::Keycode::new(COMPOSE_KEY + EVDEV_OFFSET);
         for case in COMPOSE_CASES {
             for _ in 0..HOT_PATH_ITERATIONS {
-                let c = xkb_feed_compose(&mut state, &mut compose, case.keys, compose_kc);
+                let c = xkb_feed_compose(
+                    &mut comp_st,
+                    &mut client_st,
+                    &mut compose,
+                    case.keys,
+                    compose_kc,
+                );
                 checksum = checksum.wrapping_add(c.map_or(0, |c| c as u64));
-                compose.reset();
             }
         }
     }
