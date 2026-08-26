@@ -41,6 +41,55 @@ pub fn ensure_layout_file(locale: &str, variant: Option<&str>) {
     let ron = file.to_ron_string().expect("serialize layout fixture");
     std::fs::write(&path, ron).expect("write ron layout fixture");
 }
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    xkbcommon::xkb::Context,
+    xkbcommon::xkb::Keymap,
+    xkbcommon::xkb::State,
+) {
+    use xkbcommon::xkb;
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let km = xkb::Keymap::new_from_names(
+        &ctx,
+        "evdev",
+        "",
+        locale,
+        variant.unwrap_or(""),
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon keymap");
+    let st = xkb::State::new(&km);
+    (ctx, km, st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkb_update_key(st: &mut xkbcommon::xkb::State, evdev: u32, down: bool) {
+    use xkbcommon::xkb;
+    let kc = xkb::Keycode::new(evdev + EVDEV_OFFSET);
+    let dir = if down {
+        xkb::KeyDirection::Down
+    } else {
+        xkb::KeyDirection::Up
+    };
+    st.update_key(kc, dir);
+}
+
+/// Mirror compositor modifier state into a client `WKB` via `update_modifiers`.
+#[cfg(feature = "client")]
+pub fn sync_client_modifiers(wkb: &mut wkb::WKB, state: &xkbcommon::xkb::State) {
+    use xkbcommon::xkb;
+    wkb.update_modifiers(
+        state.serialize_mods(xkb::STATE_MODS_DEPRESSED),
+        state.serialize_mods(xkb::STATE_MODS_LATCHED),
+        state.serialize_mods(xkb::STATE_MODS_LOCKED),
+        state.serialize_layout(xkb::STATE_LAYOUT_EFFECTIVE),
+    );
+}
 // ── Locales & layouts ──────────────────────────────────────────────────
 /// Primary layout — used for all key cases.
 pub const PRIMARY_LAYOUT: (&str, Option<&str>) = ("us", None);

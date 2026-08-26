@@ -33,8 +33,10 @@ jobs:
 
       - name: Run criterion benchmarks
         run: |
-          cargo bench --bench bench_setup --no-default-features --features xkb
+          cargo bench --bench bench_setup --no-default-features --features xkb,compositor
+          cargo bench --bench bench_setup_client --no-default-features --features xkb,client
           cargo bench --bench bench_key --no-default-features --features xkb,compositor
+          cargo bench --bench bench_key_client --no-default-features --features xkb,client
           cargo bench --bench bench_compose --no-default-features --features xkb,client
 
       - name: Run memory benchmark

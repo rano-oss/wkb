@@ -2,7 +2,6 @@ mod common;
 
 use common::*;
 use criterion::{criterion_group, criterion_main, Criterion};
-use std::ffi::CString;
 use std::hint::black_box;
 use std::ptr;
 use std::time::Duration;
@@ -14,7 +13,6 @@ fn cfg() -> Criterion {
         .sample_size(20)
 }
 
-#[cfg(feature = "compositor")]
 fn without_compose<T>(f: impl FnOnce() -> T) -> T {
     let saved = ["LC_ALL", "LC_CTYPE", "LANG"].map(|name| (name, std::env::var(name).ok()));
     for (name, _) in &saved {
@@ -32,14 +30,11 @@ fn without_compose<T>(f: impl FnOnce() -> T) -> T {
     result
 }
 
-#[cfg(feature = "compositor")]
 fn bench_setup_no_compose(c: &mut Criterion) {
     let mut group = c.benchmark_group("setup/no_compose");
     let locale = "us";
     let multi_layout = "us,de,fr,ru";
 
-    // Ensure precompiled RON fixtures exist (regenerate if gitignored)
-    // before any timed/registered benchmark runs.
     for l in multi_layout.split(',') {
         ensure_layout_file(l, None);
     }
@@ -169,142 +164,9 @@ fn bench_setup_no_compose(c: &mut Criterion) {
     group.finish();
 }
 
-#[cfg(feature = "client")]
-fn bench_setup_with_compose(c: &mut Criterion) {
-    let mut group = c.benchmark_group("setup/with_compose");
-    let locale = "us";
-
-    group.bench_function("wkb", |b| {
-        // Ensure compose locale resolves
-        unsafe {
-            std::env::set_var("LC_ALL", COMPOSE_LOCALE);
-        }
-        b.iter(|| {
-            let wkb: wkb::WKB =
-                wkb::WKB::new_from_names("", "", black_box(locale), "", None).unwrap();
-            black_box(wkb);
-        });
-    });
-
-    ensure_layout_file(locale, None);
-    group.bench_function("wkb-noxkb", |b| {
-        // The RON layout already embeds its compose table, so "with compose"
-        // setup for the no-XKB path is just the RON load — no XKB compose
-        // file parse. Locale env is set for symmetry with `wkb`.
-        unsafe {
-            std::env::set_var("LC_ALL", COMPOSE_LOCALE);
-        }
-        b.iter(|| {
-            let file = load_layout_file(black_box(locale), None);
-            let wkb = wkb::WKB::new_from_layouts(vec![file]).unwrap();
-            black_box(wkb);
-        });
-    });
-
-    group.bench_function("xkbcommon", |b| {
-        use xkbcommon::xkb;
-        b.iter(|| {
-            let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-            let km = xkb::Keymap::new_from_names(
-                &ctx,
-                "evdev",
-                "",
-                black_box(locale),
-                "",
-                None,
-                xkb::KEYMAP_COMPILE_NO_FLAGS,
-            )
-            .expect("keymap");
-            let st = xkb::State::new(&km);
-            let locale_os = std::ffi::OsStr::new(COMPOSE_LOCALE);
-            let table = xkb::compose::Table::new_from_locale(
-                &ctx,
-                locale_os,
-                xkb::compose::COMPILE_NO_FLAGS,
-            );
-            let cs = table
-                .as_ref()
-                .map(|t| xkb::compose::State::new(t, xkb::compose::STATE_NO_FLAGS));
-            black_box(&table);
-            black_box(&cs);
-            let _ = black_box((ctx, km, st));
-        });
-    });
-
-    group.bench_function("xkbcommon-dl", |b| {
-        let xkb = xkbcommon_dl::xkbcommon_handle();
-        let xkb_compose = xkbcommon_dl::xkbcommon_compose_handle();
-        let c_locale = CString::new(COMPOSE_LOCALE).unwrap();
-        b.iter(|| {
-            let ctx = unsafe {
-                (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS)
-            };
-            let rmlvo = xkbcommon_dl::xkb_rule_names {
-                rules: c"evdev".as_ptr(),
-                model: ptr::null(),
-                layout: c"us".as_ptr(),
-                variant: ptr::null(),
-                options: ptr::null(),
-            };
-            let km = unsafe {
-                (xkb.xkb_keymap_new_from_names)(
-                    ctx,
-                    &rmlvo,
-                    xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
-                )
-            };
-            let st = unsafe { (xkb.xkb_state_new)(km) };
-            let table = unsafe {
-                (xkb_compose.xkb_compose_table_new_from_locale)(
-                    ctx,
-                    c_locale.as_ptr(),
-                    xkbcommon_dl::xkb_compose_compile_flags::XKB_COMPOSE_COMPILE_NO_FLAGS,
-                )
-            };
-            let cs = if !table.is_null() {
-                unsafe {
-                    (xkb_compose.xkb_compose_state_new)(
-                        table,
-                        xkbcommon_dl::xkb_compose_state_flags::XKB_COMPOSE_STATE_NO_FLAGS,
-                    )
-                }
-            } else {
-                ptr::null_mut()
-            };
-            black_box((ctx, km, st, table, cs));
-            if !cs.is_null() {
-                unsafe { (xkb_compose.xkb_compose_state_unref)(cs) };
-            }
-            if !table.is_null() {
-                unsafe { (xkb_compose.xkb_compose_table_unref)(table) };
-            }
-            unsafe {
-                (xkb.xkb_state_unref)(st);
-                (xkb.xkb_keymap_unref)(km);
-                (xkb.xkb_context_unref)(ctx);
-            }
-        });
-    });
-
-    group.finish();
-}
-
-#[cfg(feature = "compositor")]
 criterion_group! {
-    name = benches_compositor;
+    name = benches;
     config = cfg();
     targets = bench_setup_no_compose,
 }
-
-#[cfg(feature = "client")]
-criterion_group! {
-    name = benches_client;
-    config = cfg();
-    targets = bench_setup_with_compose,
-}
-
-#[cfg(feature = "compositor")]
-criterion_main!(benches_compositor);
-
-#[cfg(feature = "client")]
-criterion_main!(benches_client);
+criterion_main!(benches);

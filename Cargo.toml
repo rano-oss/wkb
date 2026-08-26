@@ -51,12 +51,22 @@ xkbcommon-dl = "0.4.2"
 [[bench]]
 name = "bench_setup"
 harness = false
-required-features = ["xkb"]
+required-features = ["xkb", "compositor"]
+
+[[bench]]
+name = "bench_setup_client"
+harness = false
+required-features = ["xkb", "client"]
 
 [[bench]]
 name = "bench_key"
 harness = false
 required-features = ["xkb", "compositor"]
+
+[[bench]]
+name = "bench_key_client"
+harness = false
+required-features = ["xkb", "client"]
 
 [[bench]]
 name = "bench_compose"
