@@ -160,30 +160,6 @@ pub struct KBLayout {
     pub(crate) level_exceptions_keymap: FlatKeymap,
 }
 
-impl KBLayout {
-    #[inline]
-    fn char_at_level(&self, level: usize, evdev_code: u32) -> Option<char> {
-        let num_locked = self.modifiers.num_locked();
-        let caps_locked = self.modifiers.caps_locked();
-        if num_locked && caps_locked {
-            if let Some(c) = self.caps_num_lock_keys.get(level, evdev_code) {
-                return Some(c);
-            }
-        }
-        if num_locked {
-            if let Some(c) = self.num_lock_keys.get(level, evdev_code) {
-                return Some(c);
-            }
-        }
-        if caps_locked {
-            if let Some(c) = self.caps_lock_keymap.get(level, evdev_code) {
-                return Some(c);
-            }
-        }
-        self.state_keymap.get(level, evdev_code)
-    }
-}
-
 /// Core keyboard state machine. Tracks modifier state, key presses, and compose sequences.
 #[derive(Debug, Clone)]
 pub struct WKB {
@@ -289,12 +265,11 @@ impl WKB {
         group: u32,
     ) -> StateChanges {
         let layout_idx = self.current_layout_idx;
-        let modifiers = &self.layouts[layout_idx].modifiers;
-        let (cur_d, cur_l, cur_lo) = modifiers.raw_masks();
+        let cur = self.raw_modifiers();
         let group_ok = (group as usize) < self.num_layouts();
-        if depressed == cur_d
-            && latched == cur_l
-            && locked == cur_lo
+        if depressed == cur.depressed
+            && latched == cur.latched
+            && locked == cur.locked
             && (!group_ok || group as usize == layout_idx)
         {
             return StateChanges::default();
@@ -439,7 +414,24 @@ impl WKB {
         let base_level = kb_layout
             .state_keymap
             .level_for_modifiers(&kb_layout.modifiers);
-        kb_layout.char_at_level(base_level, evdev_code)
+        let num_locked = kb_layout.modifiers.num_locked();
+        let caps_locked = kb_layout.modifiers.caps_locked();
+        if num_locked && caps_locked {
+            if let Some(c) = kb_layout.caps_num_lock_keys.get(base_level, evdev_code) {
+                return Some(c);
+            }
+        }
+        if num_locked {
+            if let Some(c) = kb_layout.num_lock_keys.get(base_level, evdev_code) {
+                return Some(c);
+            }
+        }
+        if caps_locked {
+            if let Some(c) = kb_layout.caps_lock_keymap.get(base_level, evdev_code) {
+                return Some(c);
+            }
+        }
+        kb_layout.state_keymap.get(base_level, evdev_code)
     }
 
     /// Return whether the given modifier type is currently active.

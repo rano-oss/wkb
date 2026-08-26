@@ -271,11 +271,6 @@ impl Modifiers {
     }
 
     #[inline]
-    pub(crate) fn raw_masks(&self) -> (u32, u32, u32) {
-        (self.raw.depressed, self.raw.latched, self.raw.locked)
-    }
-
-    #[inline]
     #[cfg(feature = "compositor")]
     pub(crate) fn has_latched(&self) -> bool {
         self.raw.latched != 0
