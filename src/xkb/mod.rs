@@ -301,6 +301,30 @@ fn modifier_plane_used(
     false
 }
 
+fn modifier_has_level(modifier: &Modifier) -> bool {
+    let mut level = false;
+    modifier.for_each(|state_modifier| {
+        if matches!(
+            state_modifier.mod_type,
+            ModType::Level2 | ModType::Level3 | ModType::Level5
+        ) {
+            level = true;
+        }
+    });
+    level
+}
+
+fn layout_modifiers(modifiers: &Modifiers, num_levels: usize) -> Modifiers {
+    if num_levels > 1 {
+        return modifiers.clone();
+    }
+    let mut layout_modifiers = modifiers.clone();
+    layout_modifiers
+        .entries
+        .retain(|(_, modifier)| !modifier_has_level(modifier));
+    layout_modifiers
+}
+
 fn count_modifier_planes(
     keymap: &keymap::XkbKeymap,
     layout_idx: usize,
@@ -568,7 +592,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             repeat_keys,
             #[cfg(feature = "client")]
             composer,
-            modifiers: modifiers.clone(),
+            modifiers: layout_modifiers(&modifiers, num_levels),
             state_keymap,
             num_lock_keys,
             caps_lock_keymap,

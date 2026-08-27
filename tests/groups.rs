@@ -209,10 +209,10 @@ fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
     wkb.release_key(RIGHT_SHIFT);
     assert_eq!(wkb.active_layout_idx(), 0);
 
-    // Zhuyin deliberately has one level. Held Shift therefore produces no
-    // character, and using a key still cancels the pending group TAP.
+    // Zhuyin has one level, so Shift is not a level modifier there. Held Shift
+    // does not change the character lookup.
     wkb.press_key(LEFT_SHIFT);
-    assert_eq!(wkb.key_char(30), None);
+    assert_eq!(wkb.key_char(30), Some('ㄇ'));
     wkb.press_key(30);
     wkb.release_key(30);
     wkb.release_key(LEFT_SHIFT);
