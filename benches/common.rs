@@ -665,6 +665,78 @@ pub fn xkb_feed_compose_dl(
     out
 }
 
+/// Wayland client key path: compositor key events, client modifier sync, char
+/// lookup on key down. Returns a simple checksum for memory/size workloads.
+#[cfg(all(feature = "client", feature = "xkb"))]
+pub fn checksum_wkb_client_keys(
+    wkb: &mut wkb::WKB,
+    comp: &mut xkbcommon::xkb::State,
+    keys: &[(u32, bool)],
+) -> u64 {
+    let mut checksum = 0u64;
+    for &(code, down) in keys {
+        xkb_update_key(comp, code, down);
+        sync_client_modifiers(wkb, comp);
+        if down {
+            if let Some(ch) = wkb.key_char(code) {
+                checksum = checksum.wrapping_add(ch as u64);
+            }
+        }
+    }
+    checksum
+}
+
+/// Wayland client key path on xkbcommon: compositor `update_key`, client
+/// `update_mask`, UTF-8 lookup on key down.
+#[cfg(feature = "xkb")]
+pub fn checksum_xkb_client_keys(
+    comp: &mut xkbcommon::xkb::State,
+    client: &mut xkbcommon::xkb::State,
+    keys: &[(u32, bool)],
+) -> u64 {
+    use xkbcommon::xkb;
+    let mut checksum = 0u64;
+    for &(code, down) in keys {
+        xkb_update_key(comp, code, down);
+        sync_xkb_client_state(comp, client);
+        if down {
+            let kc = xkb::Keycode::new(code + EVDEV_OFFSET);
+            checksum = checksum.wrapping_add(client.key_get_utf8(kc).len() as u64);
+        }
+    }
+    checksum
+}
+
+/// Wayland client key path through the xkbcommon dynamic-loader FFI.
+#[cfg(feature = "xkb")]
+pub fn checksum_xkb_client_keys_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    comp: *mut xkbcommon_dl::xkb_state,
+    client: *mut xkbcommon_dl::xkb_state,
+    keys: &[(u32, bool)],
+    buf: &mut [u8],
+) -> u64 {
+    use std::os::raw::c_char;
+    let mut checksum = 0u64;
+    for &(code, down) in keys {
+        xkb_update_key_dl(xkb, comp, code, down);
+        sync_xkb_client_state_dl(xkb, comp, client);
+        if down {
+            let kc = code + EVDEV_OFFSET;
+            let n = unsafe {
+                (xkb.xkb_state_key_get_utf8)(
+                    client,
+                    kc,
+                    buf.as_mut_ptr() as *mut c_char,
+                    buf.len(),
+                )
+            };
+            checksum = checksum.wrapping_add(n as u64);
+        }
+    }
+    checksum
+}
+
 /// Fixed locale for compose benchmarks.
 pub const COMPOSE_LOCALE: &str = "en_US.UTF-8";
 
