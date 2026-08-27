@@ -111,30 +111,30 @@ let xkb_string = wkb.as_xkb_string().unwrap();
 ## Benchmarks
 
 <!-- BENCHMARK_START -->
-*Last updated: 2026-08-26 (automated via CI)*
+*Last updated: 2026-08-27 (automated via CI)*
 
 ### Speed
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (compositor) | 1.15 ms | 203.2 µs | 1.92 ms | 1.89 ms | **1.7x faster** |
-| Setup (client + compose) | 1.23 ms | 202.4 µs | 3.79 ms | 3.79 ms | **3.1x faster** |
-| Compositor key update | 128 ns | 129 ns | 148 ns | 147 ns | **1.2x faster** |
-| Compositor get char | 137 ns | 136 ns | 262 ns | 235 ns | **1.9x faster** |
-| Compositor get keysym | 135 ns | 135 ns | 202 ns | 195 ns | **1.5x faster** |
-| Client update_modifiers | 221 ns | 220 ns | 426 ns | 421 ns | **1.9x faster** |
-| Client get char | 225 ns | 226 ns | 551 ns | 514 ns | **2.4x faster** |
-| Client get keysym | 226 ns | 226 ns | 483 ns | 456 ns | **2.1x faster** |
-| Compose feed | 478 ns | 466 ns | 1.0 µs | 970 ns | **2.1x faster** |
+| Setup (compositor) | 1.31 ms | 230.5 µs | 2.17 ms | 2.19 ms | **1.7x faster** |
+| Setup (client + compose) | 1.39 ms | 230.8 µs | 4.06 ms | 4.05 ms | **2.9x faster** |
+| Compositor key update | 144 ns | 152 ns | 169 ns | 170 ns | **1.2x faster** |
+| Compositor get char | 153 ns | 154 ns | 318 ns | 275 ns | **2.1x faster** |
+| Compositor get keysym | 159 ns | 158 ns | 214 ns | 208 ns | **1.3x faster** |
+| Client update_modifiers | 229 ns | 228 ns | 433 ns | 426 ns | **1.9x faster** |
+| Client get char | 254 ns | 253 ns | 584 ns | 559 ns | **2.3x faster** |
+| Client get keysym | 238 ns | 238 ns | 516 ns | 508 ns | **2.2x faster** |
+| Compose feed | 539 ns | 501 ns | 1.2 µs | 1.1 µs | **2.3x faster** |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 4.8 MB |
-| wkb-noxkb | 3.1 MB |
-| xkbcommon | 4.9 MB |
-| xkbcommon-dl | 4.9 MB |
+| wkb | 4.9 MB |
+| wkb-noxkb | 3.9 MB |
+| xkbcommon | 5.0 MB |
+| xkbcommon-dl | 5.0 MB |
 
 ### Binary Size
 
