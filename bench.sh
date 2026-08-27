@@ -13,18 +13,23 @@ echo ""
 
 # ── 1. Speed Benchmarks (Criterion) ─────────────────────────────────
 echo "▶ [1/3] Speed benchmarks (Criterion)"
-echo "  Running: bench_setup, bench_key, bench_compose"
+echo "  Running compositor + client criterion benchmarks"
+cargo bench --bench bench_setup --no-default-features --features xkb,compositor 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
 echo ""
-for bench in bench_setup bench_key bench_compose; do
-    cargo bench --bench "$bench" 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
-    echo ""
-done
+cargo bench --bench bench_setup_client --no-default-features --features xkb,client 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
+echo ""
+cargo bench --bench bench_key --no-default-features --features xkb,compositor 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
+echo ""
+cargo bench --bench bench_key_client --no-default-features --features xkb,client 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
+echo ""
+cargo bench --bench bench_compose --no-default-features --features xkb,client 2>&1 | tee -a "$RESULTS_DIR/speed.txt"
+echo ""
 
 # ── 2. Memory Benchmarks ────────────────────────────────────────────
 echo "▶ [2/3] Memory benchmarks"
 echo ""
 
-cargo build --example bench_memory --release 2>/dev/null
+cargo build --example bench_memory --release --no-default-features --features xkb,client 2>/dev/null
 
 echo "  ── RSS measurement ──"
 ./target/release/examples/bench_memory 2>&1 | tee "$RESULTS_DIR/memory.txt"
@@ -54,9 +59,9 @@ echo ""
 
 for bin in $BINS; do
     if [ "$bin" = "bench_size_wkb" ]; then
-        cargo build --example "$bin" --release --no-default-features 2>/dev/null
+        cargo build --example "$bin" --release --no-default-features --features compositor 2>/dev/null
     else
-        cargo build --example "$bin" --release 2>/dev/null
+        cargo build --example "$bin" --release --no-default-features --features xkb,client 2>/dev/null
     fi
 done
 

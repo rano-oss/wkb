@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Test CTRL modifier combinations match xkbcommon for all keys.
 //! wkb may suppress more keys with CTRL than xkbcommon, so wkb returning
 //! None is acceptable even when xkbcommon produces a character.

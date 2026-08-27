@@ -1,6 +1,6 @@
 use crate::{KeyBitSet, KeyDirection};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GroupChange {
     Absolute(u8),
     Relative(i8),
@@ -16,7 +16,7 @@ impl GroupChange {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum GroupKind {
     Press(i8),
     Tap(GroupChange),
@@ -28,7 +28,7 @@ pub enum GroupKind {
     LatchToLockOnRelease(GroupChange),
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub struct Group {
     pub keys: Vec<u32>,
     pub action: GroupKind,

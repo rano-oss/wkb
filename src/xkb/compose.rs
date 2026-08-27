@@ -2,20 +2,42 @@
 
 use super::keymap;
 use crate::composer::Token;
+use crate::flat_keymap::FlatKeymap;
 use crate::Composer;
 use arrayvec::ArrayVec;
+use std::collections::HashMap;
 use std::path::{Path, PathBuf};
 use std::sync::{Arc, Mutex, MutexGuard, OnceLock};
 
 struct ComposeTableData {
     entries: Vec<keymap::ComposeEntry>,
-    filtered: Mutex<Vec<(Vec<char>, Arc<Composer>)>>,
+    filtered: Mutex<HashMap<Vec<char>, Arc<Composer>>>,
 }
 
 type ComposeTable = Arc<ComposeTableData>;
 type ComposeTableCache = Vec<(PathBuf, ComposeTable)>;
 
 static COMPOSE_TABLE_CACHE: OnceLock<Mutex<ComposeTableCache>> = OnceLock::new();
+
+/// Characters a compiled XKB layout can emit, for filtering locale compose tables.
+pub(crate) fn reachable_chars(
+    state_keymap: &FlatKeymap,
+    caps_lock_keymap: &FlatKeymap,
+    num_lock_keys: &FlatKeymap,
+    caps_num_lock_keys: &FlatKeymap,
+) -> Vec<char> {
+    let mut reachable: Vec<char> = state_keymap
+        .data
+        .iter()
+        .chain(&caps_lock_keymap.data)
+        .chain(&num_lock_keys.data)
+        .chain(&caps_num_lock_keys.data)
+        .filter_map(|ch| *ch)
+        .collect();
+    reachable.sort_unstable();
+    reachable.dedup();
+    reachable
+}
 
 fn table_cache() -> MutexGuard<'static, ComposeTableCache> {
     COMPOSE_TABLE_CACHE
@@ -34,7 +56,7 @@ fn parse_table(path: &Path) -> (ComposeTableData, bool) {
     (
         ComposeTableData {
             entries,
-            filtered: Mutex::new(Vec::new()),
+            filtered: Mutex::new(HashMap::new()),
         },
         complete,
     )
@@ -98,13 +120,13 @@ pub(crate) fn layout_composer(path: &Path, reachable: &[char]) -> Composer {
         .lock()
         .unwrap_or_else(|poisoned| poisoned.into_inner());
 
-    if let Some((_, composer)) = filtered.iter().find(|(chars, _)| chars == reachable) {
+    if let Some(composer) = filtered.get(reachable) {
         return composer.as_ref().clone();
     }
 
     let composer = Arc::new(build(&table.entries, Some(reachable)));
 
-    filtered.push((reachable.to_vec(), composer.clone()));
+    filtered.insert(reachable.to_vec(), composer.clone());
     composer.as_ref().clone()
 }
 

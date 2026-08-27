@@ -3,9 +3,8 @@ mod common;
 use common::*;
 use criterion::{criterion_group, criterion_main, BenchmarkId, Criterion};
 use std::os::raw::c_char;
-use std::ptr;
 use std::time::Duration;
-use std::{ffi::CString, hint::black_box};
+use std::hint::black_box;
 use wkb::KeyDirection;
 
 fn cfg() -> Criterion {
@@ -13,95 +12,6 @@ fn cfg() -> Criterion {
         .warm_up_time(Duration::from_millis(10))
         .measurement_time(Duration::from_secs(1))
         .sample_size(50)
-}
-
-// ── Setup helpers ──────────────────────────────────────────────────────
-
-fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
-    wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap()
-}
-
-fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
-    wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap()
-}
-
-/// Ensure the precompiled RON fixtures every `wkb-noxkb` bench uses exist
-/// (regenerated on demand — `ron_layouts/` is a gitignored artifact dir).
-fn ensure_noxkb_fixtures() {
-    let (pl, pv) = PRIMARY_LAYOUT;
-    ensure_layout_file(pl, pv);
-    for &(l, v) in EXTRA_LAYOUTS {
-        ensure_layout_file(l, v);
-    }
-}
-
-fn xkbcommon_setup(
-    locale: &str,
-    variant: Option<&str>,
-) -> (
-    xkbcommon::xkb::Context,
-    xkbcommon::xkb::Keymap,
-    xkbcommon::xkb::State,
-) {
-    use xkbcommon::xkb;
-    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
-    let km = xkb::Keymap::new_from_names(
-        &ctx,
-        "evdev",
-        "",
-        locale,
-        variant.unwrap_or(""),
-        None,
-        xkb::KEYMAP_COMPILE_NO_FLAGS,
-    )
-    .expect("xkbcommon keymap");
-    let st = xkb::State::new(&km);
-    (ctx, km, st)
-}
-
-fn xkbcommon_dl_setup(
-    locale: &str,
-    variant: Option<&str>,
-) -> (
-    &'static xkbcommon_dl::XkbCommon,
-    *mut xkbcommon_dl::xkb_context,
-    *mut xkbcommon_dl::xkb_keymap,
-    *mut xkbcommon_dl::xkb_state,
-) {
-    let xkb = xkbcommon_dl::xkbcommon_handle();
-    let ctx =
-        unsafe { (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS) };
-    let c_rules = CString::new("evdev").unwrap();
-    let c_layout = CString::new(locale).unwrap();
-    let c_variant = variant.map(|v| CString::new(v).unwrap());
-    let names = xkbcommon_dl::xkb_rule_names {
-        rules: c_rules.as_ptr(),
-        model: ptr::null(),
-        layout: c_layout.as_ptr(),
-        variant: c_variant.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
-        options: ptr::null(),
-    };
-    let km = unsafe {
-        (xkb.xkb_keymap_new_from_names)(
-            ctx,
-            &names,
-            xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
-        )
-    };
-    let st = unsafe { (xkb.xkb_state_new)(km) };
-    (xkb, ctx, km, st)
-}
-
-/// Iterate over (layout_id, locale, variant) for a given case.
-fn layouts_for_case(case_name: &str) -> Vec<(String, &'static str, Option<&'static str>)> {
-    let (pl, pv) = PRIMARY_LAYOUT;
-    let mut out = vec![(pv.map_or(pl.to_string(), |v| format!("{pl}_{v}")), pl, pv)];
-    if LAYOUT_SENSITIVE_CASES.contains(&case_name) {
-        for &(l, v) in EXTRA_LAYOUTS {
-            out.push((v.map_or(l.to_string(), |vv| format!("{l}_{vv}")), l, v));
-        }
-    }
-    out
 }
 
 // ── Macros to reduce per-impl boilerplate ──────────────────────────────

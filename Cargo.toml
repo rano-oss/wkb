@@ -1,6 +1,6 @@
 [package]
 name = "wayland-keyboard"
-version = "0.3.1"
+version = "0.3.2"
 edition = "2021"
 rust-version = "1.82"
 description = "Lightweight keyboard handling library for Wayland — a pure Rust alternative to xkbcommon"
@@ -21,13 +21,16 @@ include = [
 name = "wkb"
 
 [features]
-default = ["xkb", "compose"]
+default = ["client", "xkb"]
 xkb = [
     "dep:bitflags",
     "dep:lasso",
     "dep:xkeysym",
 ]
-compose = []
+# Compositor / seat role. Mutually exclusive with `client`.
+compositor = []
+# Client role. Mutually exclusive with `compositor`.
+client = []
 
 [dependencies]
 arrayvec = "0.7"
@@ -48,33 +51,44 @@ xkbcommon-dl = "0.4.2"
 [[bench]]
 name = "bench_setup"
 harness = false
-required-features = ["xkb", "compose"]
+required-features = ["xkb", "compositor"]
+
+[[bench]]
+name = "bench_setup_client"
+harness = false
+required-features = ["xkb", "client"]
 
 [[bench]]
 name = "bench_key"
 harness = false
-required-features = ["xkb"]
+required-features = ["xkb", "compositor"]
+
+[[bench]]
+name = "bench_key_client"
+harness = false
+required-features = ["xkb", "client"]
 
 [[bench]]
 name = "bench_compose"
 harness = false
-required-features = ["xkb", "compose"]
+required-features = ["xkb", "client"]
 
 [[example]]
 name = "bench_memory"
-required-features = ["xkb", "compose"]
+required-features = ["xkb", "client"]
 
 [[example]]
 name = "bench_size_wkb"
+required-features = ["compositor"]
 
 [[example]]
 name = "bench_size_wkb_xkb"
-required-features = ["xkb", "compose"]
+required-features = ["xkb", "client"]
 
 [[example]]
 name = "bench_size_xkbcommon"
-required-features = ["xkb", "compose"]
+required-features = ["xkb", "client"]
 
 [[example]]
 name = "bench_size_xkbcommon_dl"
-required-features = ["xkb", "compose"]
+required-features = ["xkb", "client"]

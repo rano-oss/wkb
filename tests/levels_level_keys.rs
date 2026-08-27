@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Compare WKB character output against xkbcommon for all keys and layouts,
 //! accessing each level directly by index (no modifiers pressed).
 

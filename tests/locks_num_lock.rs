@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Num lock behavior: hold num lock while reaching each level state and
 //! compare all keys against xkbcommon.
 

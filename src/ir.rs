@@ -15,6 +15,7 @@ use std::fmt::Write as _;
 
 use serde::{Deserialize, Serialize};
 
+#[cfg(feature = "client")]
 use crate::composer::{Composer, Token};
 use crate::flat_keymap::{FlatMap, FlatMapValue, MAX_LEVELS};
 use crate::modifiers::{ModKind, ModType, Modifier, Modifiers, StateModifier};
@@ -337,26 +338,34 @@ impl TryFrom<&KBLayout> for LayoutFile {
             caps_lock_keymap: char_section(&layout.caps_lock_keymap),
             caps_num_lock_keys: char_section(&layout.caps_num_lock_keys),
             keysym_map: named_section(&layout.named_key_map),
-            compose: compose_from_composer(&layout.composer, &reachable_chars(layout)),
+            compose: compose_section(layout),
         };
         file.validate()?;
         Ok(file)
     }
 }
 
-/// Characters this layout can produce, for filtering the compose table.
-fn reachable_chars(layout: &KBLayout) -> Vec<char> {
-    let mut reachable: Vec<char> = layout
-        .state_keymap
-        .data
-        .iter()
-        .chain(layout.caps_lock_keymap.data.iter())
-        .chain(layout.num_lock_keys.data.iter())
-        .filter_map(|ch| *ch)
-        .collect();
-    reachable.sort_unstable();
-    reachable.dedup();
-    reachable
+fn compose_section(layout: &KBLayout) -> Vec<(Vec<char>, char)> {
+    #[cfg(feature = "client")]
+    {
+        let mut reachable: Vec<char> = layout
+            .state_keymap
+            .data
+            .iter()
+            .chain(&layout.caps_lock_keymap.data)
+            .chain(&layout.num_lock_keys.data)
+            .chain(&layout.caps_num_lock_keys.data)
+            .filter_map(|ch| *ch)
+            .collect();
+        reachable.sort_unstable();
+        reachable.dedup();
+        compose_from_composer(&layout.composer, &reachable)
+    }
+    #[cfg(not(feature = "client"))]
+    {
+        let _ = layout;
+        Vec::new()
+    }
 }
 
 /// Convert a flat keymap to a per-level map, keeping only populated slots.
@@ -386,7 +395,7 @@ fn to_levels<T: FlatMapValue + PartialEq, V>(
 /// planes that repeat an identical prefix are redundant and are omitted from the
 /// serialized file. The plane sequence is halved while the two halves match.
 fn effective_levels<T: FlatMapValue + PartialEq>(flat: &FlatMap<T>) -> usize {
-    let mut n = MAX_LEVELS;
+    let mut n = flat.num_levels;
     while n > 1 {
         let half = n / 2;
         if planes_equal(flat, 0, half, half) {
@@ -459,6 +468,7 @@ fn modaction_from_state_modifier(kind: &StateModifier) -> ModAction {
     }
 }
 
+#[cfg(feature = "client")]
 /// Depth-first walk of the composer trie emitting reachable, sorted sequences.
 fn compose_from_composer(composer: &Composer, reachable: &[char]) -> Vec<(Vec<char>, char)> {
     let mut out = Vec::new();
@@ -468,6 +478,7 @@ fn compose_from_composer(composer: &Composer, reachable: &[char]) -> Vec<(Vec<ch
     out
 }
 
+#[cfg(feature = "client")]
 fn dfs_compose(
     composer: &Composer,
     node: u32,
@@ -521,6 +532,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             modifiers.set_modifier(*keycode, modifier);
         }
 
+        #[cfg(feature = "client")]
         let composer = composer_from_compose(&file.compose);
 
         let state_keymap = from_levels(&file.keymap, num_keys, Some);
@@ -532,6 +544,7 @@ impl TryFrom<LayoutFile> for KBLayout {
         Ok(KBLayout {
             name: file.layout,
             repeat_keys,
+            #[cfg(feature = "client")]
             composer,
             modifiers,
             state_keymap,
@@ -539,7 +552,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             caps_lock_keymap,
             named_key_map,
             #[cfg(feature = "xkb")]
-            level_exceptions_keymap: FlatKeymap::new(num_keys),
+            level_exceptions_keymap: FlatKeymap::with_levels(num_keys, 1),
             caps_num_lock_keys,
         })
     }
@@ -551,7 +564,8 @@ fn from_levels<T: FlatMapValue, V: Copy>(
     num_keys: usize,
     reconstruct: impl Fn(V) -> T,
 ) -> FlatMap<T> {
-    let mut flat = FlatMap::new(num_keys);
+    let max_level = levels.keys().max().copied().unwrap_or(0) as usize;
+    let mut flat = FlatMap::with_levels(num_keys, max_level + 1);
     for (level, keys) in levels {
         let base = (*level as usize) * num_keys;
         for (keycode, value) in keys {
@@ -577,6 +591,7 @@ fn modkind_from_modaction(action: ModAction) -> StateModifier {
     }
 }
 
+#[cfg(feature = "client")]
 fn composer_from_compose(sequences: &[(Vec<char>, char)]) -> Composer {
     let mut composer = Composer::new();
     for (keys, output) in sequences {

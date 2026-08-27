@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Caps + num lock combined: hold both locks while reaching each level state
 //! and compare all keys against xkbcommon.
 

@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Lock state-transition tests: toggling caps lock and num lock in sequence
 //! on a single key, and keypad keys under lock states.
 

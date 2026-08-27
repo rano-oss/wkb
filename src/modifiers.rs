@@ -11,19 +11,6 @@ pub(crate) const MOD_SCROLL_LOCK: u32 = 1 << 5; // Mod3
 pub(crate) const MOD_LOGO: u32 = 1 << 6; // Mod4
 pub(crate) const MOD_ALTGR: u32 = 1 << 7; // Mod5
 
-pub(crate) const MODIFIER_MAPPING: [(u32, u32); 10] = [
-    (LEFT_SHIFT, MOD_SHIFT),
-    (RIGHT_SHIFT, MOD_SHIFT),
-    (CAPS_LOCK, MOD_CAPS_LOCK),
-    (LEFT_CTRL, MOD_CTRL),
-    (RIGHT_CTRL, MOD_CTRL),
-    (ALT, MOD_ALT),
-    (NUM_LOCK, MOD_NUM_LOCK),
-    (SCROLL_LOCK, MOD_SCROLL_LOCK),
-    (LOGO, MOD_LOGO),
-    (ALTGR, MOD_ALTGR),
-];
-
 // Key constants
 pub const LEFT_CTRL: u32 = 29;
 pub const LEFT_SHIFT: u32 = 42;
@@ -78,6 +65,7 @@ pub enum ModKind {
 }
 
 impl ModKind {
+    #[cfg(feature = "compositor")]
     pub fn update(&mut self, key_direction: KeyDirection) {
         match self {
             ModKind::Press { ref mut pressed } => match key_direction {
@@ -123,6 +111,7 @@ impl ModKind {
         }
     }
 
+    #[cfg(feature = "compositor")]
     fn unlatch(&mut self) {
         if let ModKind::Latch {
             pressed: _,
@@ -178,10 +167,12 @@ impl StateModifier {
         self.mod_type == mod_type
     }
 
+    #[cfg(feature = "compositor")]
     pub fn unlatch(&mut self) {
         self.kind.unlatch();
     }
 
+    #[cfg(feature = "compositor")]
     pub fn update(&mut self, key_direction: KeyDirection) {
         self.kind.update(key_direction);
     }
@@ -194,6 +185,13 @@ pub enum Modifier {
 }
 
 impl Modifier {
+    #[cfg(feature = "client")]
+    pub(crate) fn has_mod_type(&self, mod_type: ModType) -> bool {
+        let mut found = false;
+        self.for_each(|sm| found |= sm.has_mod_type(mod_type));
+        found
+    }
+
     pub(crate) fn for_each(&self, mut f: impl FnMut(&StateModifier)) {
         match self {
             Self::Single(sm) => f(sm),
@@ -201,6 +199,7 @@ impl Modifier {
         }
     }
 
+    #[cfg(feature = "compositor")]
     pub(crate) fn for_each_mut(&mut self, mut f: impl FnMut(&mut StateModifier)) {
         match self {
             Self::Single(mk) => f(mk),
@@ -214,38 +213,6 @@ pub struct Modifiers {
     /// Flat array of (evdev_code, Modifier) pairs. Typically 10-20 entries.
     pub(crate) entries: Vec<(u32, Modifier)>,
     raw: RawModifiers,
-}
-
-impl Default for Modifiers {
-    fn default() -> Self {
-        let single = |mod_type, kind| Modifier::Single(StateModifier { mod_type, kind });
-        let press = |mod_type| single(mod_type, ModKind::Press { pressed: false });
-        let lock = |mod_type| {
-            single(
-                mod_type,
-                ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                },
-            )
-        };
-        let entries = vec![
-            (LEFT_CTRL, press(ModType::None)),
-            (RIGHT_CTRL, press(ModType::None)),
-            (LEFT_SHIFT, press(ModType::Level2)),
-            (RIGHT_SHIFT, press(ModType::Level2)),
-            (ALT, press(ModType::None)),
-            (ALTGR, press(ModType::None)),
-            (LOGO, press(ModType::None)),
-            (CAPS_LOCK, lock(ModType::Caps)),
-            (NUM_LOCK, lock(ModType::Num)),
-            (SCROLL_LOCK, lock(ModType::Scroll)),
-        ];
-        Self {
-            entries,
-            raw: RawModifiers::default(),
-        }
-    }
 }
 
 impl Modifiers {
@@ -287,7 +254,7 @@ impl Modifiers {
 
     pub fn active_mod_type(&self, mod_type: ModType) -> bool {
         match mod_type {
-            ModType::None => self.effective() & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0,
+            ModType::None => self.none_active(),
             ModType::Level2 => self.effective() & MOD_SHIFT != 0,
             ModType::Level3 => self.effective() & MOD_ALTGR != 0,
             ModType::Level5 => self.effective() & MOD_SCROLL_LOCK != 0,
@@ -306,11 +273,14 @@ impl Modifiers {
     }
 
     #[inline(always)]
-    pub fn active_none_and_levels(&self) -> (bool, bool, bool, bool) {
-        let effective = self.raw.depressed | self.raw.latched | self.raw.locked;
+    pub fn none_active(&self) -> bool {
+        self.effective() & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0
+    }
 
+    #[inline(always)]
+    pub fn active_levels(&self) -> (bool, bool, bool) {
+        let effective = self.effective();
         (
-            effective & (MOD_CTRL | MOD_ALT | MOD_LOGO) != 0,
             effective & MOD_SHIFT != 0,
             effective & MOD_ALTGR != 0,
             effective & MOD_SCROLL_LOCK != 0,
@@ -327,13 +297,18 @@ impl Modifiers {
         self.raw.locked & MOD_NUM_LOCK != 0
     }
 
+    #[cfg(feature = "compositor")]
     pub fn unlatch(&mut self) {
+        if self.raw.latched == 0 {
+            return;
+        }
         self.entries
             .iter_mut()
             .for_each(|(_, modifier)| modifier.for_each_mut(|sm| sm.unlatch()));
         self.raw.latched = 0;
     }
 
+    #[cfg(feature = "compositor")]
     pub(crate) fn set_state(&mut self, evdev_code: u32, key_direction: KeyDirection) -> bool {
         let position = match self.entries.iter().position(|(c, _)| *c == evdev_code) {
             Some(p) => p,
@@ -341,7 +316,7 @@ impl Modifiers {
         };
         let is_leveled = matches!(&self.entries[position].1, Modifier::Leveled(_));
         let is_modifier = if is_leveled {
-            let (_, level2, level3, level5) = self.active_none_and_levels();
+            let (level2, level3, level5) = self.active_levels();
 
             let level = level_index(level5, level3, level2) as u8;
 
@@ -437,10 +412,17 @@ fn modifier_mask(code: u32, mod_type: ModType) -> u32 {
 
         // None is used for Ctrl, Alt and Logo. Preserve their distinct
         // protocol masks using the physical keycode.
-        ModType::None => MODIFIER_MAPPING
-            .iter()
-            .find(|(mapped_code, _)| *mapped_code == code)
-            .map_or(0, |(_, mask)| *mask),
+        ModType::None => match code {
+            LEFT_SHIFT | RIGHT_SHIFT => MOD_SHIFT,
+            CAPS_LOCK => MOD_CAPS_LOCK,
+            LEFT_CTRL | RIGHT_CTRL => MOD_CTRL,
+            ALT => MOD_ALT,
+            NUM_LOCK => MOD_NUM_LOCK,
+            SCROLL_LOCK => MOD_SCROLL_LOCK,
+            LOGO => MOD_LOGO,
+            ALTGR => MOD_ALTGR,
+            _ => 0,
+        },
     }
 }
 

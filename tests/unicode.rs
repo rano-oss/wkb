@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! Test for Unicode keysym support, particularly for keysyms > U+FFFF and
 //! multi-byte Unicode characters in XKB symbol definitions.
 
@@ -68,12 +69,7 @@ fn wkb_handles_u3119() {
     let mut wkb = wkb::WKB::new_from_string(&keymap_with_u3119()).unwrap();
     let evdev_code = 16; // physical KeyQ / XKB <AD01>
     wkb.press_key(evdev_code);
-    let result = wkb.compose(evdev_code);
-    let ch = match result {
-        Some(wkb::ComposeState::Idle(c)) => Some(c),
-        _ => None,
-    };
-    assert_eq!(ch, Some('ㄙ'), "WKB should produce ㄙ (U+3119) for AD01");
+    assert_eq!(wkb.key_char(evdev_code), Some('ㄙ'), "WKB should produce ㄙ (U+3119) for AD01");
 }
 
 /// WKB preprocesses raw Unicode characters to UXXXX notation.
@@ -82,13 +78,8 @@ fn wkb_handles_raw_unicode() {
     let mut wkb = wkb::WKB::new_from_string(&keymap_with_raw_unicode()).unwrap();
     let evdev_code = 16; // physical KeyQ / XKB <AD01>
     wkb.press_key(evdev_code);
-    let result = wkb.compose(evdev_code);
-    let ch = match result {
-        Some(wkb::ComposeState::Idle(c)) => Some(c),
-        _ => None,
-    };
     assert_eq!(
-        ch,
+        wkb.key_char(evdev_code),
         Some('ㄙ'),
         "WKB should preprocess raw ㄙ and produce U+3119"
     );

@@ -23,26 +23,29 @@ impl FlatMapValue for NamedKey {
 pub(crate) struct FlatMap<T: FlatMapValue> {
     pub(crate) data: Vec<T>,
     pub(crate) num_keys: usize,
+    pub(crate) num_levels: usize,
 }
 
 impl<T: FlatMapValue> FlatMap<T> {
-    pub(crate) fn new(num_keys: usize) -> Self {
+    pub(crate) fn with_levels(num_keys: usize, num_levels: usize) -> Self {
+        let num_levels = num_levels.clamp(1, MAX_LEVELS);
         Self {
-            data: vec![T::empty(); MAX_LEVELS * num_keys],
+            data: vec![T::empty(); num_levels * num_keys],
             num_keys,
+            num_levels,
         }
     }
 
     #[inline(always)]
     pub(crate) fn get(&self, level: usize, evdev_code: u32) -> T {
         let k = evdev_code as usize;
-        if k < self.num_keys {
-            let idx = level * self.num_keys + k;
-            self.data[idx]
+        if k < self.num_keys && level < self.num_levels {
+            self.data[level * self.num_keys + k]
         } else {
             T::empty()
         }
     }
+
 }
 
 /// Flat keymap: `MAX_LEVELS` planes of `num_keys` slots.

@@ -58,13 +58,19 @@ fn main() {
             xkb::KEYMAP_COMPILE_NO_FLAGS,
         )
         .expect("keymap");
-        let mut state = xkb::State::new(&km);
+        let mut comp_st = xkb::State::new(&km);
+        let mut client_st = xkb::State::new(&km);
         let mut compose = xkb::compose::State::new(&table, xkb::compose::STATE_NO_FLAGS);
         let compose_kc = xkb::Keycode::new(COMPOSE_KEY + EVDEV_OFFSET);
         for case in COMPOSE_CASES {
-            let c = xkb_feed_compose(&mut state, &mut compose, case.keys, compose_kc);
+            let c = xkb_feed_compose(
+                &mut comp_st,
+                &mut client_st,
+                &mut compose,
+                case.keys,
+                compose_kc,
+            );
             checksum = checksum.wrapping_add(c.map_or(0, |c| c as u64));
-            compose.reset();
         }
     }
 

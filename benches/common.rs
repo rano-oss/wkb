@@ -41,6 +41,221 @@ pub fn ensure_layout_file(locale: &str, variant: Option<&str>) {
     let ron = file.to_ron_string().expect("serialize layout fixture");
     std::fs::write(&path, ron).expect("write ron layout fixture");
 }
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    xkbcommon::xkb::Context,
+    xkbcommon::xkb::Keymap,
+    xkbcommon::xkb::State,
+) {
+    use xkbcommon::xkb;
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let km = xkb::Keymap::new_from_names(
+        &ctx,
+        "evdev",
+        "",
+        locale,
+        variant.unwrap_or(""),
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon keymap");
+    let st = xkb::State::new(&km);
+    (ctx, km, st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkb_update_key(st: &mut xkbcommon::xkb::State, evdev: u32, down: bool) {
+    use xkbcommon::xkb;
+    let kc = xkb::Keycode::new(evdev + EVDEV_OFFSET);
+    let dir = if down {
+        xkb::KeyDirection::Down
+    } else {
+        xkb::KeyDirection::Up
+    };
+    st.update_key(kc, dir);
+}
+
+#[cfg(feature = "xkb")]
+pub fn serialized_modifiers(state: &xkbcommon::xkb::State) -> (u32, u32, u32, u32) {
+    use xkbcommon::xkb;
+    (
+        state.serialize_mods(xkb::STATE_MODS_DEPRESSED),
+        state.serialize_mods(xkb::STATE_MODS_LATCHED),
+        state.serialize_mods(xkb::STATE_MODS_LOCKED),
+        state.serialize_layout(xkb::STATE_LAYOUT_EFFECTIVE),
+    )
+}
+
+/// Apply compositor modifier state to a separate client `xkb::State`, matching
+/// what a Wayland client does via `xkb_state_update_mask`.
+#[cfg(feature = "xkb")]
+pub fn sync_xkb_client_state(comp: &xkbcommon::xkb::State, client: &mut xkbcommon::xkb::State) {
+    let (depressed, latched, locked, layout) = serialized_modifiers(comp);
+    client.update_mask(depressed, latched, locked, layout, layout, layout);
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_dual_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    xkbcommon::xkb::Context,
+    xkbcommon::xkb::Keymap,
+    xkbcommon::xkb::State,
+    xkbcommon::xkb::State,
+) {
+    use xkbcommon::xkb;
+    let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
+    let km = xkb::Keymap::new_from_names(
+        &ctx,
+        "evdev",
+        "",
+        locale,
+        variant.unwrap_or(""),
+        None,
+        xkb::KEYMAP_COMPILE_NO_FLAGS,
+    )
+    .expect("xkbcommon keymap");
+    let comp_st = xkb::State::new(&km);
+    let client_st = xkb::State::new(&km);
+    (ctx, km, comp_st, client_st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_dl_dual_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    &'static xkbcommon_dl::XkbCommon,
+    *mut xkbcommon_dl::xkb_context,
+    *mut xkbcommon_dl::xkb_keymap,
+    *mut xkbcommon_dl::xkb_state,
+    *mut xkbcommon_dl::xkb_state,
+) {
+    let (xkb, ctx, km, comp_st) = xkbcommon_dl_setup(locale, variant);
+    let client_st = unsafe { (xkb.xkb_state_new)(km) };
+    (xkb, ctx, km, comp_st, client_st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkb_update_key_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    st: *mut xkbcommon_dl::xkb_state,
+    evdev: u32,
+    down: bool,
+) {
+    let kc = evdev + EVDEV_OFFSET;
+    let dir = if down {
+        xkbcommon_dl::xkb_key_direction::XKB_KEY_DOWN
+    } else {
+        xkbcommon_dl::xkb_key_direction::XKB_KEY_UP
+    };
+    unsafe { (xkb.xkb_state_update_key)(st, kc, dir) };
+}
+
+#[cfg(feature = "xkb")]
+pub fn sync_xkb_client_state_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    comp: *mut xkbcommon_dl::xkb_state,
+    client: *mut xkbcommon_dl::xkb_state,
+) {
+    use xkbcommon_dl::xkb_state_component;
+    let depressed = unsafe {
+        (xkb.xkb_state_serialize_mods)(comp, xkb_state_component::XKB_STATE_MODS_DEPRESSED)
+    };
+    let latched = unsafe {
+        (xkb.xkb_state_serialize_mods)(comp, xkb_state_component::XKB_STATE_MODS_LATCHED)
+    };
+    let locked = unsafe {
+        (xkb.xkb_state_serialize_mods)(comp, xkb_state_component::XKB_STATE_MODS_LOCKED)
+    };
+    let layout = unsafe {
+        (xkb.xkb_state_serialize_layout)(comp, xkb_state_component::XKB_STATE_LAYOUT_EFFECTIVE)
+    };
+    unsafe {
+        (xkb.xkb_state_update_mask)(client, depressed, latched, locked, layout, layout, layout);
+    }
+}
+
+#[cfg(feature = "xkb")]
+pub fn xkbcommon_dl_setup(
+    locale: &str,
+    variant: Option<&str>,
+) -> (
+    &'static xkbcommon_dl::XkbCommon,
+    *mut xkbcommon_dl::xkb_context,
+    *mut xkbcommon_dl::xkb_keymap,
+    *mut xkbcommon_dl::xkb_state,
+) {
+    use std::ffi::CString;
+    use std::os::raw::c_char;
+    use std::ptr;
+
+    let xkb = xkbcommon_dl::xkbcommon_handle();
+    let ctx =
+        unsafe { (xkb.xkb_context_new)(xkbcommon_dl::xkb_context_flags::XKB_CONTEXT_NO_FLAGS) };
+    let c_rules = CString::new("evdev").unwrap();
+    let c_layout = CString::new(locale).unwrap();
+    let c_variant = variant.map(|v| CString::new(v).unwrap());
+    let names = xkbcommon_dl::xkb_rule_names {
+        rules: c_rules.as_ptr(),
+        model: ptr::null(),
+        layout: c_layout.as_ptr(),
+        variant: c_variant.as_ref().map_or(ptr::null(), |v| v.as_ptr()),
+        options: ptr::null::<c_char>(),
+    };
+    let km = unsafe {
+        (xkb.xkb_keymap_new_from_names)(
+            ctx,
+            &names,
+            xkbcommon_dl::xkb_keymap_compile_flags::XKB_KEYMAP_COMPILE_NO_FLAGS,
+        )
+    };
+    let st = unsafe { (xkb.xkb_state_new)(km) };
+    (xkb, ctx, km, st)
+}
+
+#[cfg(feature = "xkb")]
+pub fn wkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
+    wkb::WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap()
+}
+
+#[cfg(feature = "xkb")]
+pub fn wkb_noxkb_setup(locale: &str, variant: Option<&str>) -> wkb::WKB {
+    wkb::WKB::new_from_layouts(vec![load_layout_file(locale, variant)]).unwrap()
+}
+
+#[cfg(feature = "xkb")]
+pub fn ensure_noxkb_fixtures() {
+    let (pl, pv) = PRIMARY_LAYOUT;
+    ensure_layout_file(pl, pv);
+    for &(l, v) in EXTRA_LAYOUTS {
+        ensure_layout_file(l, v);
+    }
+}
+
+#[cfg(feature = "xkb")]
+pub fn layouts_for_case(case_name: &str) -> Vec<(String, &'static str, Option<&'static str>)> {
+    let (pl, pv) = PRIMARY_LAYOUT;
+    let mut out = vec![(pv.map_or(pl.to_string(), |v| format!("{pl}_{v}")), pl, pv)];
+    if LAYOUT_SENSITIVE_CASES.contains(&case_name) {
+        for &(l, v) in EXTRA_LAYOUTS {
+            out.push((v.map_or(l.to_string(), |vv| format!("{l}_{vv}")), l, v));
+        }
+    }
+    out
+}
+
+/// Mirror compositor modifier state into a client `WKB` via `update_modifiers`.
+#[cfg(feature = "client")]
+pub fn sync_client_modifiers(wkb: &mut wkb::WKB, state: &xkbcommon::xkb::State) {
+    let (depressed, latched, locked, layout) = serialized_modifiers(state);
+    wkb.update_modifiers(depressed, latched, locked, layout);
+}
 // ── Locales & layouts ──────────────────────────────────────────────────
 /// Primary layout — used for all key cases.
 pub const PRIMARY_LAYOUT: (&str, Option<&str>) = ("us", None);
@@ -341,47 +556,50 @@ pub fn is_modifier_keysym(keysym: u32) -> bool {
     (0xffe1..=0xffee).contains(&keysym) || keysym == 0xff7f
 }
 
-/// Feed a compose sequence through WKB's `press_key`/`release_key` public API
-/// and return the final composed character.
-pub fn wkb_feed_compose(wkb: &mut wkb::WKB, keys: &[(u32, bool)]) -> Option<char> {
+/// Feed a compose sequence through the Wayland client path: compositor key
+/// events drive reference modifier state, `update_modifiers` syncs the client,
+/// then `compose` runs on key down.
+#[cfg(all(feature = "client", feature = "xkb"))]
+pub fn wkb_feed_compose(
+    wkb: &mut wkb::WKB,
+    comp: &mut xkbcommon::xkb::State,
+    keys: &[(u32, bool)],
+) -> Option<char> {
+    wkb.leave();
     let mut out = None;
     for &(code, down) in keys {
+        xkb_update_key(comp, code, down);
+        sync_client_modifiers(wkb, comp);
         if down {
-            wkb.press_key(code)
-        } else {
-            wkb.release_key(code)
-        };
-        let result = wkb.compose(code);
-        if let Some(wkb::ComposeState::Finished(c)) = &result {
-            out = Some(*c);
+            if let Some(wkb::ComposeState::Finished(c)) = wkb.compose(code) {
+                out = Some(c);
+            }
         }
     }
     out
 }
 
-/// Feed a compose sequence through xkbcommon's keymap state + compose state.
-/// `compose_kc` designates the keycode whose keysym is replaced with
-/// `Multi_key`, mirroring `WKB::set_compose_key` on layouts without one.
+/// Feed a compose sequence through the Wayland client path on xkbcommon:
+/// compositor `update_key`, client `update_mask`, compose feed on key down.
+#[cfg(feature = "xkb")]
 pub fn xkb_feed_compose(
-    state: &mut xkbcommon::xkb::State,
+    comp: &mut xkbcommon::xkb::State,
+    client: &mut xkbcommon::xkb::State,
     compose: &mut xkbcommon::xkb::compose::State,
     keys: &[(u32, bool)],
     compose_kc: xkbcommon::xkb::Keycode,
 ) -> Option<char> {
     use xkbcommon::xkb;
+    compose.reset();
     let mut out = None;
     for &(evdev, down) in keys {
-        let kc = xkb::Keycode::new(evdev + EVDEV_OFFSET);
-        let dir = if down {
-            xkb::KeyDirection::Down
-        } else {
-            xkb::KeyDirection::Up
-        };
-        state.update_key(kc, dir);
+        xkb_update_key(comp, evdev, down);
+        sync_xkb_client_state(comp, client);
         if !down {
             continue;
         }
-        let sym = state.key_get_one_sym(kc);
+        let kc = xkb::Keycode::new(evdev + EVDEV_OFFSET);
+        let sym = client.key_get_one_sym(kc);
         if is_modifier_keysym(sym.raw()) {
             continue;
         }
@@ -396,6 +614,127 @@ pub fn xkb_feed_compose(
         }
     }
     out
+}
+
+/// Wayland client compose path through the xkbcommon dynamic-loader FFI.
+#[cfg(feature = "xkb")]
+pub fn xkb_feed_compose_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    xkb_compose: &xkbcommon_dl::XkbCommonCompose,
+    comp: *mut xkbcommon_dl::xkb_state,
+    client: *mut xkbcommon_dl::xkb_state,
+    cs: *mut xkbcommon_dl::xkb_compose_state,
+    keys: &[(u32, bool)],
+    compose_kc: u32,
+    utf8_buf: &mut [u8],
+) -> Option<char> {
+    use std::os::raw::c_char;
+    unsafe { (xkb_compose.xkb_compose_state_reset)(cs) };
+    let mut out = None;
+    for &(evdev, down) in keys {
+        xkb_update_key_dl(xkb, comp, evdev, down);
+        sync_xkb_client_state_dl(xkb, comp, client);
+        if !down {
+            continue;
+        }
+        let kc = evdev + EVDEV_OFFSET;
+        let sym = unsafe { (xkb.xkb_state_key_get_one_sym)(client, kc) };
+        if is_modifier_keysym(sym) {
+            continue;
+        }
+        let feed = if kc == compose_kc {
+            XKB_KEY_MULTI_KEY
+        } else {
+            sym
+        };
+        unsafe { (xkb_compose.xkb_compose_state_feed)(cs, feed) };
+        let status = unsafe { (xkb_compose.xkb_compose_state_get_status)(cs) };
+        if status == xkbcommon_dl::xkb_compose_status::XKB_COMPOSE_COMPOSED {
+            let n = unsafe {
+                (xkb_compose.xkb_compose_state_get_utf8)(
+                    cs,
+                    utf8_buf.as_mut_ptr() as *mut c_char,
+                    utf8_buf.len(),
+                )
+            };
+            out = std::str::from_utf8(&utf8_buf[..n as usize])
+                .ok()
+                .and_then(|s| s.chars().next());
+        }
+    }
+    out
+}
+
+/// Wayland client key path: compositor key events, client modifier sync, char
+/// lookup on key down. Returns a simple checksum for memory/size workloads.
+#[cfg(all(feature = "client", feature = "xkb"))]
+pub fn checksum_wkb_client_keys(
+    wkb: &mut wkb::WKB,
+    comp: &mut xkbcommon::xkb::State,
+    keys: &[(u32, bool)],
+) -> u64 {
+    let mut checksum = 0u64;
+    for &(code, down) in keys {
+        xkb_update_key(comp, code, down);
+        sync_client_modifiers(wkb, comp);
+        if down {
+            if let Some(ch) = wkb.key_char(code) {
+                checksum = checksum.wrapping_add(ch as u64);
+            }
+        }
+    }
+    checksum
+}
+
+/// Wayland client key path on xkbcommon: compositor `update_key`, client
+/// `update_mask`, UTF-8 lookup on key down.
+#[cfg(feature = "xkb")]
+pub fn checksum_xkb_client_keys(
+    comp: &mut xkbcommon::xkb::State,
+    client: &mut xkbcommon::xkb::State,
+    keys: &[(u32, bool)],
+) -> u64 {
+    use xkbcommon::xkb;
+    let mut checksum = 0u64;
+    for &(code, down) in keys {
+        xkb_update_key(comp, code, down);
+        sync_xkb_client_state(comp, client);
+        if down {
+            let kc = xkb::Keycode::new(code + EVDEV_OFFSET);
+            checksum = checksum.wrapping_add(client.key_get_utf8(kc).len() as u64);
+        }
+    }
+    checksum
+}
+
+/// Wayland client key path through the xkbcommon dynamic-loader FFI.
+#[cfg(feature = "xkb")]
+pub fn checksum_xkb_client_keys_dl(
+    xkb: &xkbcommon_dl::XkbCommon,
+    comp: *mut xkbcommon_dl::xkb_state,
+    client: *mut xkbcommon_dl::xkb_state,
+    keys: &[(u32, bool)],
+    buf: &mut [u8],
+) -> u64 {
+    use std::os::raw::c_char;
+    let mut checksum = 0u64;
+    for &(code, down) in keys {
+        xkb_update_key_dl(xkb, comp, code, down);
+        sync_xkb_client_state_dl(xkb, comp, client);
+        if down {
+            let kc = code + EVDEV_OFFSET;
+            let n = unsafe {
+                (xkb.xkb_state_key_get_utf8)(
+                    client,
+                    kc,
+                    buf.as_mut_ptr() as *mut c_char,
+                    buf.len(),
+                )
+            };
+            checksum = checksum.wrapping_add(n as u64);
+        }
+    }
+    checksum
 }
 
 /// Fixed locale for compose benchmarks.

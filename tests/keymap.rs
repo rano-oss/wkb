@@ -1,3 +1,4 @@
+#![cfg(feature = "compositor")]
 //! If a key is added to `NamedKey` that changes the collapse set, the
 //! comparison helpers in this file must be updated.
 
@@ -5,6 +6,9 @@ include!("../test_data/layouts.rs");
 use test_case::test_matrix;
 use wkb::{keysym_to_named_key, ModType, WKB};
 use xkbcommon::xkb;
+
+mod common;
+use common::level_code;
 
 // ── Helpers ─────────────────────────────────────────────────────────────
 
@@ -96,8 +100,6 @@ fn get_wkb_string(locale: &str, variant: Option<&str>) -> String {
     let layout = variant.map(String::from);
     let wkb = WKB::new_from_names("", "", locale, layout.as_deref().unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have XkbKeymap stored")
-        .to_string()
 }
 
 // ── Export tests (test_matrix over all locales) ─────────────────────────
@@ -135,10 +137,10 @@ fn export_us_intl_matches_xkbcommon() {
 ])]
 fn export_round_trip(locale: &str) {
     let wkb = WKB::new_from_names("", "", locale, "", None).unwrap();
-    let exported = wkb.as_xkb_string().expect("should have keymap");
+    let exported = wkb.as_xkb_string();
 
     let wkb2 = WKB::new_from_string(&exported).unwrap();
-    let exported2 = wkb2.as_xkb_string().expect("round-trip should have keymap");
+    let exported2 = wkb2.as_xkb_string();
 
     compare_keymaps_functionally(&exported, &exported2, &format!("{locale}_roundtrip"));
 }
@@ -177,13 +179,7 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
                 continue;
             }
         };
-        let wkb_str = match wkb.as_xkb_string() {
-            Some(s) => s.to_string(),
-            None => {
-                failures.push(format!("{label}: as_xkb_string() returned None"));
-                continue;
-            }
-        };
+        let wkb_str = wkb.as_xkb_string();
 
         // Parse wkb's exported string via xkbcommon
         let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -294,8 +290,6 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
 fn keymap_string_from_export(locale: &str, variant: Option<&str>) -> String {
     let wkb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have XkbKeymap stored")
-        .to_string()
 }
 
 #[test]
@@ -312,7 +306,7 @@ fn string_us() {
         );
     }
 
-    if let Some((shift_code, _)) = wkb_from_string.level_code(ModType::Level2) {
+    if let Some((shift_code, _)) = level_code(&wkb_from_string, ModType::Level2) {
         wkb_from_string.press_key(shift_code);
         wkb_from_names.press_key(shift_code);
 
@@ -362,11 +356,11 @@ fn string_modifiers() {
     let wkb = WKB::new_from_string(&keymap_str).unwrap();
 
     assert!(
-        wkb.level_code(ModType::Level2).is_some(),
+        level_code(&wkb, ModType::Level2).is_some(),
         "Level2 (Shift) should be detected"
     );
     assert!(
-        wkb.level_code(ModType::Level3).is_some(),
+        level_code(&wkb, ModType::Level3).is_some(),
         "Level3 (AltGr) should be detected"
     );
 }

@@ -1,3 +1,4 @@
+use crate::modifiers::{ModKind, ModType, StateModifier};
 use super::parser::*;
 use std::borrow::Cow;
 use xkeysym::Keysym;
@@ -152,6 +153,64 @@ pub(crate) fn xkb_keysym_is_lower(ks: u32) -> bool {
         _ => ch.is_lowercase(),
     })
 }
+pub(crate) fn modtype_from_keysym(ks: u32) -> Option<ModType> {
+    match ks {
+        0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
+        0xfe11..=0xfe13 => Some(ModType::Level5),
+        0xff20 => Some(ModType::Compose),
+        _ => None,
+    }
+}
+
+pub(crate) fn state_modifier_for_keysym(ks: u32, mt: ModType) -> StateModifier {
+    match ks {
+        0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => StateModifier {
+            kind: ModKind::Lock {
+                pressed: false,
+                locked: 0,
+            },
+            mod_type: mt,
+        },
+        0xfe04 | 0xfe12 => StateModifier {
+            kind: ModKind::Latch {
+                pressed: false,
+                latched: false,
+            },
+            mod_type: mt,
+        },
+        _ => StateModifier {
+            kind: ModKind::Press { pressed: false },
+            mod_type: mt,
+        },
+    }
+}
+
+pub(crate) fn modtype_from_modifier_name(name: &str) -> Option<ModType> {
+    match name {
+        "Shift" => Some(ModType::Level2),
+        "ISO_Level3_Shift" | "Mode_switch" | "LevelThree" => Some(ModType::Level3),
+        "ISO_Level5_Shift" | "LevelFive" => Some(ModType::Level5),
+        "Lock" => Some(ModType::Caps),
+        "Mod2" => Some(ModType::Num),
+        "Mod5" => Some(ModType::Level3),
+        "Scroll_Lock" | "ScrollLock" => Some(ModType::Scroll),
+        "Control" => Some(ModType::None),
+        _ => None,
+    }
+}
+
+pub(crate) fn keysym_for_state_modifier(modifier: &StateModifier) -> Option<u32> {
+    match (modifier.kind, modifier.mod_type) {
+        (ModKind::Press { .. }, ModType::Level3) => Some(0xfe03),
+        (ModKind::Press { .. }, ModType::Level5) => Some(0xfe11),
+        (ModKind::Latch { .. }, ModType::Level3) => Some(0xfe04),
+        (ModKind::Latch { .. }, ModType::Level5) => Some(0xfe12),
+        (ModKind::Lock { .. }, ModType::Level3) => Some(0xfe0d),
+        (ModKind::Lock { .. }, ModType::Level5) => Some(0xfe13),
+        _ => None,
+    }
+}
+
 pub(crate) fn xkb_keysym_is_upper_or_title(ks: u32) -> bool {
     case_char(ks).is_some_and(|ch| match ch as u32 {
         0x1c5 | 0x1c8 | 0x1cb | 0x1f2 => true,

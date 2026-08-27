@@ -3,7 +3,7 @@ name: Benchmarks
 on:
   push:
     branches: [main]
-  # pull_request:
+  pull_request:
   workflow_dispatch:
 
 permissions:
@@ -31,23 +31,30 @@ jobs:
       - name: Cache cargo registry and target
         uses: Swatinem/rust-cache@v2
 
+      # rust-cache may restore a partial target/criterion/ tree (base/ dirs without
+      # sample.json). Criterion then prints errors to stdout for every benchmark.
+      - name: Clear stale criterion cache
+        run: rm -rf target/criterion
+
       - name: Run criterion benchmarks
         run: |
-          cargo bench --bench bench_setup
-          cargo bench --bench bench_key
-          cargo bench --bench bench_compose
+          cargo bench --bench bench_setup --no-default-features --features xkb,compositor
+          cargo bench --bench bench_setup_client --no-default-features --features xkb,client
+          cargo bench --bench bench_key --no-default-features --features xkb,compositor
+          cargo bench --bench bench_key_client --no-default-features --features xkb,client
+          cargo bench --bench bench_compose --no-default-features --features xkb,client
 
       - name: Run memory benchmark
         run: |
-          cargo build --example bench_memory --release
+          cargo build --example bench_memory --release --no-default-features --features xkb,client
           ./target/release/examples/bench_memory > /tmp/mem_output.txt 2>&1
 
       - name: Measure binary sizes
         run: |
-          cargo build --example bench_size_wkb --release --features compose
-          cargo build --example bench_size_wkb_xkb --release
-          cargo build --example bench_size_xkbcommon --release
-          cargo build --example bench_size_xkbcommon_dl --release
+          cargo build --example bench_size_wkb --release --no-default-features --features compositor
+          cargo build --example bench_size_wkb_xkb --release --no-default-features --features xkb,client
+          cargo build --example bench_size_xkbcommon --release --no-default-features --features xkb,client
+          cargo build --example bench_size_xkbcommon_dl --release --no-default-features --features xkb,client
           for bin in bench_size_wkb bench_size_wkb_xkb bench_size_xkbcommon bench_size_xkbcommon_dl; do
             strip target/release/examples/$bin
           done
