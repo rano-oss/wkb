@@ -63,7 +63,6 @@ fn bench_setup_no_compose(c: &mut Criterion) {
         wkb::WKB::new_from_names("", "", locale, "", None)
             .unwrap()
             .as_xkb_string()
-            .unwrap()
     });
     group.bench_function("wkb_xkb_string", |b| {
         without_compose(|| {
@@ -101,7 +100,6 @@ fn bench_setup_no_compose(c: &mut Criterion) {
         wkb::WKB::new_from_names("", "", multi_layout, "", None)
             .unwrap()
             .as_xkb_string()
-            .unwrap()
     });
     group.bench_function("wkb_multilayout_xkb_string", |b| {
         without_compose(|| {

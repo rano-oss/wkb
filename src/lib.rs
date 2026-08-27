@@ -273,7 +273,7 @@ impl WKB {
             return StateChanges::default();
         }
 
-        let before_mods = self.raw_modifiers();
+        let before_mods = cur;
         let before_leds = self.leds_state();
         if group_ok {
             let new_layout = group as usize;
@@ -354,8 +354,8 @@ impl WKB {
     /// Generates the string on demand from the flat keysym tables.
     /// Returns the generated XKB v1 keymap string.
     #[cfg(feature = "xkb")]
-    pub fn as_xkb_string(&self) -> Option<String> {
-        Some(self.generate_xkb_string())
+    pub fn as_xkb_string(&self) -> String {
+        self.generate_xkb_string()
     }
 
     /// Get the named, non-character identity for an evdev keycode under the
@@ -474,9 +474,8 @@ impl WKB {
     /// `delta = 1` cycles forward through layouts. Combining this with
     /// [`LockFlags::TAP`] changes layout only when the key is released without
     /// another key being pressed while it was held.
-    pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) -> bool {
+    pub fn set_group_key(&mut self, evdev_code: u32, kind: GroupKind) {
         self.groups.set_key(evdev_code, kind);
-        true
     }
 
     /// Process a key press (compositor role only).
@@ -513,9 +512,10 @@ impl WKB {
                 .update(raw.depressed, raw.latched, raw.locked);
             self.current_layout_idx = new_layout;
         }
-        if !is_modifier && key_direction == KeyDirection::Down && self.raw_modifiers().latched != 0
-        {
-            self.layouts[self.current_layout_idx].modifiers.unlatch();
+        if !is_modifier && key_direction == KeyDirection::Down {
+            if self.raw_modifiers().latched != 0 {
+                self.layouts[self.current_layout_idx].modifiers.unlatch();
+            }
         }
         StateChanges {
             is_modifier,

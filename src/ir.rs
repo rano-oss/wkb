@@ -348,29 +348,24 @@ impl TryFrom<&KBLayout> for LayoutFile {
 fn compose_section(layout: &KBLayout) -> Vec<(Vec<char>, char)> {
     #[cfg(feature = "client")]
     {
-        compose_from_composer(&layout.composer, &reachable_chars(layout))
+        let mut reachable: Vec<char> = layout
+            .state_keymap
+            .data
+            .iter()
+            .chain(&layout.caps_lock_keymap.data)
+            .chain(&layout.num_lock_keys.data)
+            .chain(&layout.caps_num_lock_keys.data)
+            .filter_map(|ch| *ch)
+            .collect();
+        reachable.sort_unstable();
+        reachable.dedup();
+        compose_from_composer(&layout.composer, &reachable)
     }
     #[cfg(not(feature = "client"))]
     {
         let _ = layout;
         Vec::new()
     }
-}
-
-#[cfg(feature = "client")]
-/// Characters this layout can produce, for filtering the compose table.
-fn reachable_chars(layout: &KBLayout) -> Vec<char> {
-    let mut reachable: Vec<char> = layout
-        .state_keymap
-        .data
-        .iter()
-        .chain(layout.caps_lock_keymap.data.iter())
-        .chain(layout.num_lock_keys.data.iter())
-        .filter_map(|ch| *ch)
-        .collect();
-    reachable.sort_unstable();
-    reachable.dedup();
-    reachable
 }
 
 /// Convert a flat keymap to a per-level map, keeping only populated slots.
@@ -400,7 +395,7 @@ fn to_levels<T: FlatMapValue + PartialEq, V>(
 /// planes that repeat an identical prefix are redundant and are omitted from the
 /// serialized file. The plane sequence is halved while the two halves match.
 fn effective_levels<T: FlatMapValue + PartialEq>(flat: &FlatMap<T>) -> usize {
-    let mut n = MAX_LEVELS;
+    let mut n = flat.num_levels;
     while n > 1 {
         let half = n / 2;
         if planes_equal(flat, 0, half, half) {
@@ -557,7 +552,7 @@ impl TryFrom<LayoutFile> for KBLayout {
             caps_lock_keymap,
             named_key_map,
             #[cfg(feature = "xkb")]
-            level_exceptions_keymap: FlatKeymap::new(num_keys),
+            level_exceptions_keymap: FlatKeymap::with_levels(num_keys, 1),
             caps_num_lock_keys,
         })
     }
@@ -569,7 +564,8 @@ fn from_levels<T: FlatMapValue, V: Copy>(
     num_keys: usize,
     reconstruct: impl Fn(V) -> T,
 ) -> FlatMap<T> {
-    let mut flat = FlatMap::new(num_keys);
+    let max_level = levels.keys().max().copied().unwrap_or(0) as usize;
+    let mut flat = FlatMap::with_levels(num_keys, max_level + 1);
     for (level, keys) in levels {
         let base = (*level as usize) * num_keys;
         for (keycode, value) in keys {

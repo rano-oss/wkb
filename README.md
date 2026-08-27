@@ -93,7 +93,7 @@ use wkb::WKB;
 let wkb = WKB::new_from_names("evdev", "pc105", "us,de", "dvorak,", None).unwrap();
 
 // Serialize to XKB string for wl_keyboard.keymap
-let xkb_string = wkb.as_xkb_string().unwrap();
+let xkb_string = wkb.as_xkb_string();
 
 // Switch layouts via group index (no re-parsing needed)
 // wkb.set_layout(1).unwrap(); // switch to German

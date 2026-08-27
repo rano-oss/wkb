@@ -1,13 +1,13 @@
 //! Lossy WKB to XKB v1 serialization.
 use super::keynames::{evdev_to_keyname, named_key_to_keysym};
-use super::keysym::keysym_get_name;
-use crate::flat_keymap::MAX_LEVELS;
-use crate::modifiers::{ModKind, ModType, Modifier, StateModifier};
+use super::keysym::{keysym_for_state_modifier, keysym_get_name};
+use crate::modifiers::Modifier;
 use crate::named_keys::NamedKey;
 use crate::{KBLayout, WKB};
 use std::fmt::Write;
 fn max_level(layout: &KBLayout, key: u32) -> usize {
-    (0..MAX_LEVELS)
+    let levels = layout.state_keymap.num_levels;
+    (0..levels)
         .rev()
         .find(|&level| {
             layout.named_key_map.get(level, key) != NamedKey::Unnamed
@@ -17,17 +17,6 @@ fn max_level(layout: &KBLayout, key: u32) -> usize {
             || usize::from(layout.modifiers.get(key).is_some()),
             |level| level + 1,
         )
-}
-fn modifier_keysym(modifier: &StateModifier) -> Option<u32> {
-    match (modifier.kind, modifier.mod_type) {
-        (ModKind::Press { .. }, ModType::Level3) => Some(0xfe03),
-        (ModKind::Press { .. }, ModType::Level5) => Some(0xfe11),
-        (ModKind::Latch { .. }, ModType::Level3) => Some(0xfe04),
-        (ModKind::Latch { .. }, ModType::Level5) => Some(0xfe12),
-        (ModKind::Lock { .. }, ModType::Level3) => Some(0xfe0d),
-        (ModKind::Lock { .. }, ModType::Level5) => Some(0xfe13),
-        _ => None,
-    }
 }
 fn type_name(layout: &KBLayout, key: u32, levels: usize) -> &'static str {
     if levels == 2
@@ -81,8 +70,8 @@ impl WKB {
                 .modifiers
                 .get(key)
                 .and_then(|modifier| match modifier {
-                    Modifier::Single(value) => modifier_keysym(value),
-                    Modifier::Leveled(values) => values.values().next().and_then(modifier_keysym),
+                    Modifier::Single(value) => keysym_for_state_modifier(value),
+                    Modifier::Leveled(values) => values.values().next().and_then(keysym_for_state_modifier),
                 })
                 .unwrap_or(0);
         }

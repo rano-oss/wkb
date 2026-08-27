@@ -18,7 +18,7 @@ use crate::{Group, GroupChange, GroupKind, Groups, KeyBitSet};
 #[cfg(feature = "client")]
 pub use compose::{load_compose_from_path, load_compose_from_path_uncached};
 pub use keynames::keysym_to_named_key;
-use std::collections::BTreeMap;
+use std::collections::{BTreeMap, HashSet};
 #[derive(Debug, thiserror::Error)]
 pub enum XkbError {
     #[error("Failed to create XKB context")]
@@ -28,7 +28,19 @@ pub enum XkbError {
     #[error("Failed to parse keymap string")]
     KeymapParsing,
 }
+const EVDEV_OFFSET: u32 = 8;
 const REAL_MOD_STATES: usize = parser::MOD_REAL_MASK_ALL as usize + 1;
+
+fn mod_mask_with_fallback(keymap: &keymap::XkbKeymap, names: &[&str]) -> u32 {
+    for name in names {
+        let mask = keymap.mod_get_mask(name);
+        if mask != 0 {
+            return mask;
+        }
+    }
+    0
+}
+
 #[derive(Clone, Copy, Default)]
 struct CompiledTypeState {
     level: u32,
@@ -157,8 +169,8 @@ fn group_kind(action: XkbAction) -> Option<GroupKind> {
     }
 }
 fn build_groups_from_keymap(keymap: &keymap::XkbKeymap) -> Groups {
-    const EVDEV_OFFSET: u32 = 8;
     let mut entries = Vec::new();
+    let mut seen = HashSet::new();
     for (keycode, key) in keymap.keys.iter().enumerate() {
         let keycode = keycode as u32;
         if keycode < EVDEV_OFFSET {
@@ -184,7 +196,7 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap) -> Groups {
                     keys.sort_unstable();
                     keys.dedup();
                     let group = Group { keys, action };
-                    if !entries.contains(&group) {
+                    if seen.insert(group.clone()) {
                         entries.push(group);
                     }
                 }
@@ -199,7 +211,7 @@ fn build_groups_from_keymap(keymap: &keymap::XkbKeymap) -> Groups {
                 keys: vec![evdev_code],
                 action,
             };
-            if !entries.contains(&group) {
+            if seen.insert(group.clone()) {
                 entries.push(group);
             }
         }
@@ -239,6 +251,104 @@ fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
             .any(|level| level.sym != l0_sym)
         || keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
 }
+
+fn modifier_plane_used(
+    level: usize,
+    raw_group: Option<&parser::XkbGroup>,
+    state_group: Option<&parser::XkbGroup>,
+    state_type: Option<&CompiledType>,
+    states: &[[u32; MAX_LEVELS]; 4],
+    caps_affected: bool,
+    num_affected: bool,
+    caps_mask: u32,
+) -> bool {
+    if raw_group
+        .and_then(|group| group.levels.get(level))
+        .is_some_and(|data| data.sym != 0)
+    {
+        return true;
+    }
+    let (Some(group), Some(type_)) = (state_group, state_type) else {
+        return false;
+    };
+    let base = resolve_char(group, type_, states[0][level], 0);
+    if base.is_some() {
+        return true;
+    }
+    for (kind, affected) in [
+        true,
+        caps_affected,
+        num_affected,
+        caps_affected || num_affected,
+    ]
+    .into_iter()
+    .enumerate()
+    .skip(1)
+    {
+        if !affected {
+            continue;
+        }
+        let value = resolve_char(
+            group,
+            type_,
+            states[kind][level],
+            u32::from(kind & 1 != 0 && caps_affected) * caps_mask,
+        );
+        if value.is_some() && value != base {
+            return true;
+        }
+    }
+    false
+}
+
+fn count_modifier_planes(
+    keymap: &keymap::XkbKeymap,
+    layout_idx: usize,
+    min_keycode: u32,
+    max_keycode: u32,
+    states: &[[u32; MAX_LEVELS]; 4],
+    compiled_types: &[CompiledType],
+    caps_mask: u32,
+) -> usize {
+    let mut num_levels = 1;
+    for (kc, key) in keymap.keys.iter().enumerate() {
+        let kc = kc as u32;
+        if kc < min_keycode || kc > max_keycode {
+            continue;
+        }
+        let raw_group =
+            (!key.groups.is_empty()).then(|| &key.groups[layout_idx % key.groups.len()]);
+        let state_group = key.groups.get(layout_idx);
+        let state_type =
+            state_group.and_then(|group| compiled_types.get(group.type_idx as usize));
+        let (caps_affected, num_affected) = state_group
+            .and_then(|group| {
+                let type_ = keymap.types.get(group.type_idx as usize)?;
+                let compiled = compiled_types.get(group.type_idx as usize)?;
+                Some((
+                    key_affected_by_caps(group, type_.num_levels as usize),
+                    compiled.num_lock_affected,
+                ))
+            })
+            .unwrap_or_default();
+        for level in 0..MAX_LEVELS {
+            if modifier_plane_used(
+                level,
+                raw_group,
+                state_group,
+                state_type,
+                states,
+                caps_affected,
+                num_affected,
+                caps_mask,
+            ) {
+                num_levels = num_levels.max(level + 1);
+            }
+        }
+    }
+    num_levels
+}
+
 fn lock_activation(
     keymap: &keymap::XkbKeymap,
     types: &[CompiledType],
@@ -285,7 +395,6 @@ fn layout_has_level5_activation(
 }
 #[cfg_attr(not(feature = "client"), allow(unused_variables))]
 fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str>) -> WKB {
-    const EVDEV_OFFSET: u32 = 8;
     let min_keycode = keymap.min_key_code.max(EVDEV_OFFSET);
     let max_keycode = keymap.keys.len().saturating_sub(1) as u32;
     let num_keys = keymap.keys.len().saturating_sub(EVDEV_OFFSET as usize);
@@ -295,27 +404,11 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
     let caps_mask = keymap.mod_get_mask("Lock");
     let num_mask = keymap.mod_get_mask("Mod2");
     let level2_mask = keymap.mod_get_mask("Shift");
-    let level3_mask = {
-        let m = keymap.mod_get_mask("ISO_Level3_Shift");
-        if m != 0 {
-            m
-        } else {
-            let m = keymap.mod_get_mask("Mode_switch");
-            if m != 0 {
-                m
-            } else {
-                keymap.mod_get_mask("Mod5")
-            }
-        }
-    };
-    let level5_mask = {
-        let m = keymap.mod_get_mask("ISO_Level5_Shift");
-        if m != 0 {
-            m
-        } else {
-            keymap.mod_get_mask("LevelFive")
-        }
-    };
+    let level3_mask = mod_mask_with_fallback(
+        keymap,
+        &["ISO_Level3_Shift", "Mode_switch", "Mod5"],
+    );
+    let level5_mask = mod_mask_with_fallback(keymap, &["ISO_Level5_Shift", "LevelFive"]);
     let level_masks: [u32; 8] = [
         0,
         level2_mask,
@@ -355,9 +448,19 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 )
             })
         });
-        let mut level_exceptions_keymap = FlatKeymap::new(num_keys);
-        let mut named_key_map = FlatNamedKeyMap::new(num_keys);
-        let mut maps: [FlatKeymap; 4] = std::array::from_fn(|_| FlatKeymap::new(num_keys));
+        let num_levels = count_modifier_planes(
+            keymap,
+            layout_idx,
+            min_keycode,
+            max_keycode,
+            &states,
+            &compiled_types,
+            caps_mask,
+        );
+        let mut level_exceptions_keymap = FlatKeymap::with_levels(num_keys, num_levels);
+        let mut named_key_map = FlatNamedKeyMap::with_levels(num_keys, num_levels);
+        let mut maps: [FlatKeymap; 4] =
+            std::array::from_fn(|_| FlatKeymap::with_levels(num_keys, num_levels));
         let mut repeat_keys = KeyBitSet::default();
         for (kc, key) in keymap.keys.iter().enumerate() {
             let kc = kc as u32;
@@ -383,7 +486,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                     ))
                 })
                 .unwrap_or_default();
-            for level in 0..MAX_LEVELS {
+            for level in 0..num_levels {
                 let idx = level * num_keys + evdev;
                 if let Some(sym) = raw_group
                     .and_then(|group| group.levels.get(level))
@@ -435,16 +538,12 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             let locale_hints: Vec<&str> = layout_locales
                 .map(|locales| locales.split(',').collect())
                 .unwrap_or_default();
-            let mut reachable: Vec<char> = state_keymap
-                .data
-                .iter()
-                .chain(&caps_lock_keymap.data)
-                .chain(&num_lock_keys.data)
-                .chain(&caps_num_lock_keys.data)
-                .filter_map(|ch| *ch)
-                .collect();
-            reachable.sort_unstable();
-            reachable.dedup();
+            let reachable = compose::reachable_chars(
+                &state_keymap,
+                &caps_lock_keymap,
+                &num_lock_keys,
+                &caps_num_lock_keys,
+            );
             let compose_locale = locale_hints
                 .get(layout_idx)
                 .copied()
@@ -509,52 +608,10 @@ pub(crate) fn new_from_string(string: &str) -> Result<WKB, XkbError> {
     let keymap = xkb_keymap_new_from_string(ctx, string.as_bytes())?;
     Ok(build_wkb_from_keymap(&keymap, None))
 }
-fn modtype_from_name(name: &str) -> Option<ModType> {
-    match name {
-        "Shift" => Some(ModType::Level2),
-        "ISO_Level3_Shift" | "Mode_switch" | "LevelThree" => Some(ModType::Level3),
-        "ISO_Level5_Shift" | "LevelFive" => Some(ModType::Level5),
-        "Lock" => Some(ModType::Caps),
-        "Mod2" => Some(ModType::Num),
-        "Mod5" => Some(ModType::Level3),
-        "Scroll_Lock" | "ScrollLock" => Some(ModType::Scroll),
-        "Control" => Some(ModType::None),
-        _ => None,
-    }
-}
 fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
+    use keysym::{modtype_from_keysym, modtype_from_modifier_name, state_modifier_for_keysym};
+
     let mut modifiers = Modifiers::new();
-    let keysym_to_modtype = |ks: u32| -> Option<ModType> {
-        match ks {
-            0xfe03 | 0xfe04 | 0xfe05 | 0xfe0d => Some(ModType::Level3),
-            0xfe11..=0xfe13 => Some(ModType::Level5),
-            0xff20 => Some(ModType::Compose),
-            _ => None,
-        }
-    };
-    let keysym_to_state_modifier = |ks: u32, mt: ModType| -> StateModifier {
-        match ks {
-            0xffe6 | 0xfe05 | 0xfe0d | 0xfe13 => StateModifier {
-                kind: ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                },
-                mod_type: mt,
-            },
-            0xfe04 | 0xfe12 => StateModifier {
-                kind: ModKind::Latch {
-                    pressed: false,
-                    latched: false,
-                },
-                mod_type: mt,
-            },
-            _ => StateModifier {
-                kind: ModKind::Press { pressed: false },
-                mod_type: mt,
-            },
-        }
-    };
-    const EVDEV_OFFSET: u32 = 8;
     for (keycode, key) in keymap.keys.iter().enumerate() {
         let keycode = keycode as u32;
         if keycode < EVDEV_OFFSET {
@@ -571,11 +628,12 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             .filter(|&sym| sym != 0);
         let num_levels = g0.levels.len() as u32;
         if num_levels == 1 {
-            if let Some((sym, mt)) = sym.and_then(|sym| keysym_to_modtype(sym).map(|mt| (sym, mt)))
+            if let Some((sym, mt)) =
+                sym.and_then(|sym| modtype_from_keysym(sym).map(|mt| (sym, mt)))
             {
                 modifiers.set_modifier(
                     evdev_code,
-                    Modifier::Single(keysym_to_state_modifier(sym, mt)),
+                    Modifier::Single(state_modifier_for_keysym(sym, mt)),
                 );
                 continue;
             }
@@ -586,11 +644,11 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
         }
         for modifier in keymap.mods.mods.iter().take(keymap.mods.num_mods as usize) {
             let mod_mask = modifier.mapping;
-            let named_type = modtype_from_name(keymap.ctx.atom_text(modifier.name));
+            let named_type = modtype_from_modifier_name(keymap.ctx.atom_text(modifier.name));
             if (key.modmap & mod_mask) == 0 && (vmodmap & mod_mask) == 0 {
                 continue;
             }
-            let mod_type = sym.and_then(keysym_to_modtype).or(named_type);
+            let mod_type = sym.and_then(modtype_from_keysym).or(named_type);
             let Some(mod_type) = mod_type else { continue };
             if mod_type == ModType::Caps {
                 let caps_levels = (0..num_levels).filter(|&level| {
@@ -622,7 +680,7 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             }
             let state_modifier = match (sym, mod_type) {
                 (Some(sym), ModType::Level2 | ModType::Level3 | ModType::Level5) => {
-                    keysym_to_state_modifier(sym, mod_type)
+                    state_modifier_for_keysym(sym, mod_type)
                 }
                 (_, ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
                     kind: ModKind::Lock {

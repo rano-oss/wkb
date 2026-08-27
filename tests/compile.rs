@@ -112,9 +112,7 @@ fn run_xkb_compile_test(case_dir: &Path) -> Result<(), String> {
         .map_err(|e| format!("{name}: WKB error: {e}"))?;
 
     // Round-trip: serialize with WKB and verify xkbcommon can re-parse
-    let serialized = wkb
-        .as_xkb_string()
-        .ok_or_else(|| format!("{name}: WKB serializer returned None"))?;
+    let serialized = wkb.as_xkb_string();
 
     let ctx2 = xkbcommon::xkb::Context::new(xkbcommon::xkb::CONTEXT_NO_FLAGS);
     xkbcommon::xkb::Keymap::new_from_string(

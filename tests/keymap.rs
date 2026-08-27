@@ -97,8 +97,6 @@ fn get_wkb_string(locale: &str, variant: Option<&str>) -> String {
     let layout = variant.map(String::from);
     let wkb = WKB::new_from_names("", "", locale, layout.as_deref().unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have XkbKeymap stored")
-        .to_string()
 }
 
 // ── Export tests (test_matrix over all locales) ─────────────────────────
@@ -136,10 +134,10 @@ fn export_us_intl_matches_xkbcommon() {
 ])]
 fn export_round_trip(locale: &str) {
     let wkb = WKB::new_from_names("", "", locale, "", None).unwrap();
-    let exported = wkb.as_xkb_string().expect("should have keymap");
+    let exported = wkb.as_xkb_string();
 
     let wkb2 = WKB::new_from_string(&exported).unwrap();
-    let exported2 = wkb2.as_xkb_string().expect("round-trip should have keymap");
+    let exported2 = wkb2.as_xkb_string();
 
     compare_keymaps_functionally(&exported, &exported2, &format!("{locale}_roundtrip"));
 }
@@ -178,13 +176,7 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
                 continue;
             }
         };
-        let wkb_str = match wkb.as_xkb_string() {
-            Some(s) => s.to_string(),
-            None => {
-                failures.push(format!("{label}: as_xkb_string() returned None"));
-                continue;
-            }
-        };
+        let wkb_str = wkb.as_xkb_string();
 
         // Parse wkb's exported string via xkbcommon
         let ctx = xkb::Context::new(xkb::CONTEXT_NO_FLAGS);
@@ -295,8 +287,6 @@ fn export_all_variants_match_xkbcommon(locale: &str) {
 fn keymap_string_from_export(locale: &str, variant: Option<&str>) -> String {
     let wkb = WKB::new_from_names("", "", locale, variant.unwrap_or(""), None).unwrap();
     wkb.as_xkb_string()
-        .expect("WKB should have XkbKeymap stored")
-        .to_string()
 }
 
 #[test]

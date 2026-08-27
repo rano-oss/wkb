@@ -186,8 +186,8 @@ fn shift_tap_switches_zhuyin_and_norwegian_without_changing_shift_hold() {
         .unwrap();
     let mut wkb = WKB::new_from_layouts(vec![zhuyin, norwegian]).unwrap();
 
-    assert!(wkb.set_group_key(LEFT_SHIFT, GroupKind::Tap(GroupChange::Relative(1))));
-    assert!(wkb.set_group_key(RIGHT_SHIFT, GroupKind::Tap(GroupChange::Relative(1))));
+    wkb.set_group_key(LEFT_SHIFT, GroupKind::Tap(GroupChange::Relative(1)));
+    wkb.set_group_key(RIGHT_SHIFT, GroupKind::Tap(GroupChange::Relative(1)));
 
     // An unused Shift release changes group; pressing Shift itself does not.
     wkb.press_key(LEFT_SHIFT);

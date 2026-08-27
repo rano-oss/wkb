@@ -215,38 +215,6 @@ pub struct Modifiers {
     raw: RawModifiers,
 }
 
-impl Default for Modifiers {
-    fn default() -> Self {
-        let single = |mod_type, kind| Modifier::Single(StateModifier { mod_type, kind });
-        let press = |mod_type| single(mod_type, ModKind::Press { pressed: false });
-        let lock = |mod_type| {
-            single(
-                mod_type,
-                ModKind::Lock {
-                    pressed: false,
-                    locked: 0,
-                },
-            )
-        };
-        let entries = vec![
-            (LEFT_CTRL, press(ModType::None)),
-            (RIGHT_CTRL, press(ModType::None)),
-            (LEFT_SHIFT, press(ModType::Level2)),
-            (RIGHT_SHIFT, press(ModType::Level2)),
-            (ALT, press(ModType::None)),
-            (ALTGR, press(ModType::None)),
-            (LOGO, press(ModType::None)),
-            (CAPS_LOCK, lock(ModType::Caps)),
-            (NUM_LOCK, lock(ModType::Num)),
-            (SCROLL_LOCK, lock(ModType::Scroll)),
-        ];
-        Self {
-            entries,
-            raw: RawModifiers::default(),
-        }
-    }
-}
-
 impl Modifiers {
     pub fn new() -> Self {
         Self {
