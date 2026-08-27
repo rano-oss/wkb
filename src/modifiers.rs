@@ -287,43 +287,6 @@ impl Modifiers {
         )
     }
 
-    /// Return the keycode (and optional level) for the given modifier type.
-    pub(crate) fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        let mut other_mod = None;
-
-        for (code, modifier) in self.iter() {
-            match modifier {
-                Modifier::Single(state_modifier) => {
-                    if state_modifier.has_mod_type(mod_type) {
-                        match state_modifier.kind {
-                            ModKind::Press { .. } => return Some((*code, None)),
-                            _ => {
-                                if other_mod.is_none() {
-                                    other_mod = Some((*code, None));
-                                }
-                            }
-                        }
-                    }
-                }
-                Modifier::Leveled(map) => {
-                    for (level, state_modifier) in map {
-                        if state_modifier.has_mod_type(mod_type) {
-                            match state_modifier.kind {
-                                ModKind::Press { .. } => return Some((*code, Some(*level))),
-                                _ => {
-                                    if other_mod.is_none() {
-                                        other_mod = Some((*code, Some(*level)));
-                                    }
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        other_mod
-    }
-
     #[inline]
     pub fn caps_locked(&self) -> bool {
         self.raw.locked & MOD_CAPS_LOCK != 0

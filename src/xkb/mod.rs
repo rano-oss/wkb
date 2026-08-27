@@ -301,28 +301,123 @@ fn modifier_plane_used(
     false
 }
 
-fn modifier_has_level(modifier: &Modifier) -> bool {
-    let mut level = false;
-    modifier.for_each(|state_modifier| {
-        if matches!(
-            state_modifier.mod_type,
-            ModType::Level2 | ModType::Level3 | ModType::Level5
-        ) {
-            level = true;
-        }
-    });
-    level
+fn level_modifier_usable(mod_type: ModType, num_levels: usize) -> bool {
+    match mod_type {
+        ModType::Level2 => num_levels > 1,
+        ModType::Level3 => num_levels > 2,
+        ModType::Level5 => num_levels > 4,
+        _ => false,
+    }
 }
 
-fn layout_modifiers(modifiers: &Modifiers, num_levels: usize) -> Modifiers {
-    if num_levels > 1 {
-        return modifiers.clone();
+fn is_level_modtype(mod_type: ModType) -> bool {
+    matches!(
+        mod_type,
+        ModType::Level2 | ModType::Level3 | ModType::Level5
+    )
+}
+
+fn layout_modifiers(
+    base: &Modifiers,
+    keymap: &keymap::XkbKeymap,
+    num_levels: usize,
+) -> Modifiers {
+    let mut modifiers = Modifiers::new();
+    for (code, modifier) in base.iter() {
+        modifiers.set_modifier(*code, modifier.clone());
     }
-    let mut layout_modifiers = modifiers.clone();
-    layout_modifiers
-        .entries
-        .retain(|(_, modifier)| !modifier_has_level(modifier));
-    layout_modifiers
+    add_level_modifiers(&mut modifiers, keymap, num_levels);
+    modifiers
+}
+
+fn add_level_modifiers(modifiers: &mut Modifiers, keymap: &keymap::XkbKeymap, num_levels: usize) {
+    use keysym::{modtype_from_keysym, modtype_from_modifier_name, state_modifier_for_keysym};
+
+    for (keycode, key) in keymap.keys.iter().enumerate() {
+        let keycode = keycode as u32;
+        if keycode < EVDEV_OFFSET {
+            continue;
+        }
+        let evdev_code = keycode - EVDEV_OFFSET;
+        let Some(g0) = key.groups.first() else {
+            continue;
+        };
+        let sym = g0
+            .levels
+            .first()
+            .map(|level| level.sym)
+            .filter(|&sym| sym != 0);
+        if g0.levels.len() == 1 {
+            if let Some((sym, mod_type)) =
+                sym.and_then(|sym| modtype_from_keysym(sym).map(|mt| (sym, mt)))
+            {
+                if level_modifier_usable(mod_type, num_levels) {
+                    modifiers.set_modifier(
+                        evdev_code,
+                        Modifier::Single(state_modifier_for_keysym(sym, mod_type)),
+                    );
+                }
+                continue;
+            }
+        }
+        let vmodmap = key.vmodmap.unwrap_or(0);
+        if key.modmap == 0 && vmodmap == 0 {
+            continue;
+        }
+        for modifier in keymap.mods.mods.iter().take(keymap.mods.num_mods as usize) {
+            let mod_mask = modifier.mapping;
+            let named_type = modtype_from_modifier_name(keymap.ctx.atom_text(modifier.name));
+            if (key.modmap & mod_mask) == 0 && (vmodmap & mod_mask) == 0 {
+                continue;
+            }
+            let mod_type = sym.and_then(modtype_from_keysym).or(named_type);
+            let Some(mod_type) = mod_type else { continue };
+            if !level_modifier_usable(mod_type, num_levels) {
+                continue;
+            }
+            let state_modifier = match sym {
+                Some(sym) => state_modifier_for_keysym(sym, mod_type),
+                None => continue,
+            };
+            modifiers.set_modifier(evdev_code, Modifier::Single(state_modifier));
+        }
+    }
+}
+
+fn modifier_level_code(modifiers: &Modifiers, mod_type: ModType) -> Option<(u32, Option<u8>)> {
+    let mut other_mod = None;
+
+    for (code, modifier) in modifiers.iter() {
+        match modifier {
+            Modifier::Single(state_modifier) => {
+                if state_modifier.has_mod_type(mod_type) {
+                    match state_modifier.kind {
+                        ModKind::Press { .. } => return Some((*code, None)),
+                        _ => {
+                            if other_mod.is_none() {
+                                other_mod = Some((*code, None));
+                            }
+                        }
+                    }
+                }
+            }
+            Modifier::Leveled(map) => {
+                for (level, state_modifier) in map {
+                    if state_modifier.has_mod_type(mod_type) {
+                        match state_modifier.kind {
+                            ModKind::Press { .. } => return Some((*code, Some(*level))),
+                            _ => {
+                                if other_mod.is_none() {
+                                    other_mod = Some((*code, Some(*level)));
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    other_mod
 }
 
 fn count_modifier_planes(
@@ -444,8 +539,10 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
         level2_mask | level3_mask | level5_mask,
     ];
     let groups = build_groups_from_keymap(keymap);
-    let caps_kc = modifiers.level_code(ModType::Caps).map(|(code, _)| code + EVDEV_OFFSET);
-    let num_kc = modifiers.level_code(ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
+    let caps_kc =
+        modifier_level_code(&modifiers, ModType::Caps).map(|(code, _)| code + EVDEV_OFFSET);
+    let num_kc =
+        modifier_level_code(&modifiers, ModType::Num).map(|(code, _)| code + EVDEV_OFFSET);
     let caps_active = lock_activation(keymap, &compiled_types, caps_kc, 0xffe5, &level_masks);
     let num_active = lock_activation(keymap, &compiled_types, num_kc, 0xff7f, &level_masks);
     #[cfg(feature = "client")]
@@ -592,7 +689,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
             repeat_keys,
             #[cfg(feature = "client")]
             composer,
-            modifiers: layout_modifiers(&modifiers, num_levels),
+            modifiers: layout_modifiers(&modifiers, keymap, num_levels),
             state_keymap,
             num_lock_keys,
             caps_lock_keymap,
@@ -655,10 +752,12 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             if let Some((sym, mt)) =
                 sym.and_then(|sym| modtype_from_keysym(sym).map(|mt| (sym, mt)))
             {
-                modifiers.set_modifier(
-                    evdev_code,
-                    Modifier::Single(state_modifier_for_keysym(sym, mt)),
-                );
+                if !is_level_modtype(mt) {
+                    modifiers.set_modifier(
+                        evdev_code,
+                        Modifier::Single(state_modifier_for_keysym(sym, mt)),
+                    );
+                }
                 continue;
             }
         }
@@ -674,6 +773,9 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
             }
             let mod_type = sym.and_then(modtype_from_keysym).or(named_type);
             let Some(mod_type) = mod_type else { continue };
+            if is_level_modtype(mod_type) {
+                continue;
+            }
             if mod_type == ModType::Caps {
                 let caps_levels = (0..num_levels).filter(|&level| {
                     g0.levels
@@ -703,9 +805,6 @@ fn build_modifiers_from_keymap(keymap: &keymap::XkbKeymap) -> Modifiers {
                 }
             }
             let state_modifier = match (sym, mod_type) {
-                (Some(sym), ModType::Level2 | ModType::Level3 | ModType::Level5) => {
-                    state_modifier_for_keysym(sym, mod_type)
-                }
                 (_, ModType::Caps | ModType::Num | ModType::Scroll) => StateModifier {
                     kind: ModKind::Lock {
                         pressed: false,

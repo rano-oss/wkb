@@ -518,8 +518,6 @@ impl TryFrom<LayoutFile> for KBLayout {
             repeat_keys.insert(*k);
         });
 
-        let single_level = file.keymap.keys().max().copied().unwrap_or(0) == 0;
-
         let mut modifiers = Modifiers::new();
         for (keycode, actions) in &file.modifiers {
             let modifier = match actions.as_slice() {
@@ -532,11 +530,6 @@ impl TryFrom<LayoutFile> for KBLayout {
                 ),
             };
             modifiers.set_modifier(*keycode, modifier);
-        }
-        if single_level {
-            modifiers
-                .entries
-                .retain(|(_, modifier)| !modifier_has_level(modifier));
         }
 
         #[cfg(feature = "client")]
@@ -563,19 +556,6 @@ impl TryFrom<LayoutFile> for KBLayout {
             caps_num_lock_keys,
         })
     }
-}
-
-fn modifier_has_level(modifier: &Modifier) -> bool {
-    let mut level = false;
-    modifier.for_each(|state_modifier| {
-        if matches!(
-            state_modifier.mod_type,
-            ModType::Level2 | ModType::Level3 | ModType::Level5
-        ) {
-            level = true;
-        }
-    });
-    level
 }
 
 /// Un-flatten a per-level map back into a single `FlatMap`.

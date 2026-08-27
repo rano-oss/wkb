@@ -7,6 +7,9 @@ use test_case::test_matrix;
 use wkb::{keysym_to_named_key, ModType, WKB};
 use xkbcommon::xkb;
 
+mod common;
+use common::level_code;
+
 // ── Helpers ─────────────────────────────────────────────────────────────
 
 /// Parse both keymap strings and compare them structurally: for every keycode,
@@ -303,7 +306,7 @@ fn string_us() {
         );
     }
 
-    if let Some((shift_code, _)) = wkb_from_string.level_code(ModType::Level2) {
+    if let Some((shift_code, _)) = level_code(&wkb_from_string, ModType::Level2) {
         wkb_from_string.press_key(shift_code);
         wkb_from_names.press_key(shift_code);
 
@@ -353,11 +356,11 @@ fn string_modifiers() {
     let wkb = WKB::new_from_string(&keymap_str).unwrap();
 
     assert!(
-        wkb.level_code(ModType::Level2).is_some(),
+        level_code(&wkb, ModType::Level2).is_some(),
         "Level2 (Shift) should be detected"
     );
     assert!(
-        wkb.level_code(ModType::Level3).is_some(),
+        level_code(&wkb, ModType::Level3).is_some(),
         "Level3 (AltGr) should be detected"
     );
 }

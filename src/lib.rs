@@ -367,12 +367,20 @@ impl WKB {
     /// keys such as Shift and Escape keep their identity.
     pub fn named_key(&self, evdev_code: u32) -> NamedKey {
         let kb_layout = &self.layouts[self.current_layout_idx];
-        let level = kb_layout
-            .named_key_map
-            .level_for_modifiers(&kb_layout.modifiers);
-        kb_layout
-            .named_key_map
-            .get_with_fallback(level, evdev_code)
+        let (level2, level3, level5) = kb_layout.modifiers.active_levels();
+        let level = level_index(level5, level3, level2);
+        let map = &kb_layout.named_key_map;
+        let at = map.get(level, evdev_code);
+        if at != NamedKey::Unnamed || level == 0 {
+            return at;
+        }
+        for l in (0..level).rev() {
+            let named = map.get(l, evdev_code);
+            if named != NamedKey::Unnamed {
+                return named;
+            }
+        }
+        NamedKey::Unnamed
     }
 
     /// Get the named key at a specific layout and level for an evdev keycode.
@@ -409,9 +417,8 @@ impl WKB {
         if kb_layout.modifiers.none_active() {
             return None;
         }
-        let base_level = kb_layout
-            .state_keymap
-            .level_for_modifiers(&kb_layout.modifiers);
+        let (level2, level3, level5) = kb_layout.modifiers.active_levels();
+        let base_level = level_index(level5, level3, level2);
         let num_locked = kb_layout.modifiers.num_locked();
         let caps_locked = kb_layout.modifiers.caps_locked();
         if num_locked && caps_locked {
@@ -438,14 +445,6 @@ impl WKB {
         self.layouts[self.current_layout_idx]
             .modifiers
             .active_mod_type(mod_type)
-    }
-
-    /// Return the keycode (and optional level) for the given modifier type.
-    #[doc(hidden)]
-    pub fn level_code(&self, mod_type: ModType) -> Option<(u32, Option<u8>)> {
-        self.layouts[self.current_layout_idx]
-            .modifiers
-            .level_code(mod_type)
     }
 
     /// Designate an evdev keycode as the Compose (Multi_key) key.

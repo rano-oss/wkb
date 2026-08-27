@@ -6,7 +6,7 @@ use xkbcommon::xkb::{self as xkbcmn, Keycode};
 include!("../test_data/layouts.rs");
 
 mod common;
-use common::{update_both, xkb_new_from_names};
+use common::{level_code, update_both, xkb_new_from_names};
 
 /// Test modifier state after multiple rapid presses/releases
 #[test_matrix([
@@ -23,7 +23,7 @@ fn rapid_modifier_changes(locale: &str) {
         let mut wkb = wkb::WKB::new_from_names("", "", locale, &layout, None).unwrap();
         let mut xkb = xkb_new_from_names(locale, &layout);
 
-        let shift_code = wkb.level_code(ModType::Level2);
+        let shift_code = level_code(&wkb, ModType::Level2);
         if shift_code.is_none() {
             continue;
         }
@@ -151,7 +151,7 @@ fn test_mm_zawgyi_latch_sequence() {
 fn test_cm_modifier_type() {
     let wkb = wkb::WKB::new_from_names("", "", "cm", "qwerty", None).unwrap();
     assert!(
-        wkb.level_code(ModType::Level3).is_some(),
+        level_code(&wkb, ModType::Level3).is_some(),
         "cm/qwerty should define a Level3 modifier"
     );
 }
@@ -160,7 +160,7 @@ fn test_cm_modifier_type() {
 fn test_ie_ogam_shift_type() {
     let wkb = wkb::WKB::new_from_names("", "", "ie", "ogam_is434", None).unwrap();
     assert!(
-        wkb.level_code(ModType::Level2).is_some(),
+        level_code(&wkb, ModType::Level2).is_some(),
         "ie/ogam_is434 should define a Shift (Level2) modifier"
     );
 }
