@@ -339,6 +339,9 @@ fn add_level_modifiers(modifiers: &mut Modifiers, keymap: &keymap::XkbKeymap, nu
             continue;
         }
         let evdev_code = keycode - EVDEV_OFFSET;
+        if modifiers.get(evdev_code).is_some() {
+            continue;
+        }
         let Some(g0) = key.groups.first() else {
             continue;
         };
