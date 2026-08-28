@@ -2,6 +2,8 @@
 //! plus XKB v1 text serialization.
 #[cfg(feature = "client")]
 pub(crate) mod compose;
+#[cfg(feature = "client")]
+pub(crate) mod compose_paths;
 pub(crate) mod keymap;
 pub(crate) mod keynames;
 pub(crate) mod keysym;
@@ -252,34 +254,36 @@ fn key_affected_by_caps(group: &parser::XkbGroup, num_levels: usize) -> bool {
         || keysym::xkb_keysym_to_upper(l0_sym) != l0_sym
 }
 
-fn modifier_plane_used(
-    level: usize,
-    raw_group: Option<&parser::XkbGroup>,
-    state_group: Option<&parser::XkbGroup>,
-    state_type: Option<&CompiledType>,
-    states: &[[u32; MAX_LEVELS]; 4],
+struct ModifierPlaneCtx<'a> {
+    raw_group: Option<&'a parser::XkbGroup>,
+    state_group: Option<&'a parser::XkbGroup>,
+    state_type: Option<&'a CompiledType>,
+    states: &'a [[u32; MAX_LEVELS]; 4],
     caps_affected: bool,
     num_affected: bool,
     caps_mask: u32,
-) -> bool {
-    if raw_group
+}
+
+fn modifier_plane_used(level: usize, ctx: &ModifierPlaneCtx<'_>) -> bool {
+    if ctx
+        .raw_group
         .and_then(|group| group.levels.get(level))
         .is_some_and(|data| data.sym != 0)
     {
         return true;
     }
-    let (Some(group), Some(type_)) = (state_group, state_type) else {
+    let (Some(group), Some(type_)) = (ctx.state_group, ctx.state_type) else {
         return false;
     };
-    let base = resolve_char(group, type_, states[0][level], 0);
+    let base = resolve_char(group, type_, ctx.states[0][level], 0);
     if base.is_some() {
         return true;
     }
     for (kind, affected) in [
         true,
-        caps_affected,
-        num_affected,
-        caps_affected || num_affected,
+        ctx.caps_affected,
+        ctx.num_affected,
+        ctx.caps_affected || ctx.num_affected,
     ]
     .into_iter()
     .enumerate()
@@ -291,8 +295,8 @@ fn modifier_plane_used(
         let value = resolve_char(
             group,
             type_,
-            states[kind][level],
-            u32::from(kind & 1 != 0 && caps_affected) * caps_mask,
+            ctx.states[kind][level],
+            u32::from(kind & 1 != 0 && ctx.caps_affected) * ctx.caps_mask,
         );
         if value.is_some() && value != base {
             return true;
@@ -453,17 +457,17 @@ fn count_modifier_planes(
                 ))
             })
             .unwrap_or_default();
+        let plane_ctx = ModifierPlaneCtx {
+            raw_group,
+            state_group,
+            state_type,
+            states,
+            caps_affected,
+            num_affected,
+            caps_mask,
+        };
         for level in 0..MAX_LEVELS {
-            if modifier_plane_used(
-                level,
-                raw_group,
-                state_group,
-                state_type,
-                states,
-                caps_affected,
-                num_affected,
-                caps_mask,
-            ) {
+            if modifier_plane_used(level, &plane_ctx) {
                 num_levels = num_levels.max(level + 1);
             }
         }
@@ -610,7 +614,7 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                     ))
                 })
                 .unwrap_or_default();
-            for level in 0..num_levels {
+            for (level, _) in states[0].iter().enumerate().take(num_levels) {
                 let idx = level * num_keys + evdev;
                 if let Some(sym) = raw_group
                     .and_then(|group| group.levels.get(level))
@@ -668,16 +672,22 @@ fn build_wkb_from_keymap(keymap: &keymap::XkbKeymap, layout_locales: Option<&str
                 &num_lock_keys,
                 &caps_num_lock_keys,
             );
+            let dead_keysyms = compose::layout_dead_keysyms(
+                keymap,
+                layout_idx,
+                min_keycode,
+                max_keycode,
+            );
             let compose_locale = locale_hints
                 .get(layout_idx)
                 .copied()
                 .filter(|locale| !locale.is_empty())
                 .or(env_locale.as_deref());
             compose_locale
-                .and_then(keymap::resolve_compose_file)
-                .map(|subpath| {
-                    let path = std::path::Path::new("/usr/share/X11/locale").join(&subpath);
-                    layout_composer(&path, &reachable)
+                .and_then(|locale| {
+                    keymap::resolve_compose_path(locale).map(|path| {
+                        layout_composer(&path, locale, &reachable, &dead_keysyms)
+                    })
                 })
                 .unwrap_or_default()
         };

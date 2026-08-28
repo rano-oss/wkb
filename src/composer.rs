@@ -136,7 +136,7 @@ impl Composer {
     }
 
     pub fn buffer(&self) -> Option<ComposeState> {
-        (self.cur != 0).then(|| ComposeState::Composing(self.buf))
+        (self.cur != 0).then_some(ComposeState::Composing(self.buf))
     }
 
     pub(crate) fn reset(&mut self) {

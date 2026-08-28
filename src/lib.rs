@@ -78,6 +78,7 @@ pub use modifiers::{
 };
 pub use physical_keys::PhysicalKey;
 /// Intermediate representation for persisted layout data files.
+mod ir_tables;
 pub mod ir;
 mod named_keys;
 pub use named_keys::NamedKey;
@@ -153,7 +154,8 @@ pub struct KBLayout {
     pub(crate) state_keymap: FlatKeymap,
     pub(crate) num_lock_keys: FlatKeymap,
     pub(crate) caps_lock_keymap: FlatKeymap,
-    /// Overrides active while BOTH Num Lock and Caps Lock are locked.
+    /// Both-locks overrides from XKB compile only; not stored in RON layout files.
+    #[cfg(feature = "xkb")]
     pub(crate) caps_num_lock_keys: FlatKeymap,
     pub(crate) named_key_map: FlatNamedKeyMap,
     #[cfg(feature = "xkb")]
@@ -421,9 +423,11 @@ impl WKB {
         let base_level = level_index(level5, level3, level2);
         let num_locked = kb_layout.modifiers.num_locked();
         let caps_locked = kb_layout.modifiers.caps_locked();
-        if num_locked && caps_locked {
-            if let Some(c) = kb_layout.caps_num_lock_keys.get(base_level, evdev_code) {
-                return Some(c);
+        #[cfg(feature = "xkb")]{
+            if num_locked && caps_locked {
+                if let Some(c) = kb_layout.caps_num_lock_keys.get(base_level, evdev_code) {
+                    return Some(c);
+                }
             }
         }
         if num_locked {
@@ -511,10 +515,11 @@ impl WKB {
                 .update(raw.depressed, raw.latched, raw.locked);
             self.current_layout_idx = new_layout;
         }
-        if !is_modifier && key_direction == KeyDirection::Down {
-            if self.raw_modifiers().latched != 0 {
-                self.layouts[self.current_layout_idx].modifiers.unlatch();
-            }
+        if !is_modifier
+            && key_direction == KeyDirection::Down
+            && self.raw_modifiers().latched != 0
+        {
+            self.layouts[self.current_layout_idx].modifiers.unlatch();
         }
         StateChanges {
             is_modifier,

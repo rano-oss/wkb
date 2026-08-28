@@ -53,11 +53,11 @@ fn layout_file_compose_roundtrip() {
         version: ir::FORMAT_VERSION,
         layout: "test".to_string(),
         repeat_keys: vec![],
+        repeat_remove: vec![],
         modifiers: vec![],
         keymap,
         num_lock_keys: Default::default(),
         caps_lock_keymap: Default::default(),
-        caps_num_lock_keys: Default::default(),
         keysym_map: Default::default(),
         compose: vec![(vec![COMPOSE, 'a', 'e'], 'æ')],
     };

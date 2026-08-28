@@ -1,6 +1,5 @@
 #![cfg(feature = "compositor")]
-//! Caps + num lock combined: hold both locks while reaching each level state
-//! and compare all keys against xkbcommon.
+//! Caps + num lock together: compare all keys against xkbcommon (XKB compile path).
 
 use test_case::test_matrix;
 use wkb::WKB;

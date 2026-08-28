@@ -517,7 +517,7 @@ pub(crate) enum Statement<'a> {
     Include(Vec<IncludeStmt>),
     Keycode(KeycodeDef),
     KeyAlias(KeyAliasDef),
-    Var(VarDef),
+    Var(Box<VarDef>),
     VMods(Vec<VModDef>),
     KeyType(NamedVarDef<'a>),
     Symbols(NamedVarDef<'a>),

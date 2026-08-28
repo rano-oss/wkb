@@ -34,7 +34,6 @@ XKB at runtime.
 ## Top-level structure
 
 ```ron
-// wkb keyboard layout (RON format)
 (
     version: 1,
     layout: "English (US)",
@@ -48,21 +47,14 @@ XKB at runtime.
     ],
     keymap: {
         0: {
-            1: '\u{1b}', 2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7',
-            9: '8', 10: '9', 11: '0', 12: '-', 13: '=', 14: '\u{7f}', 15: '\t',
+            2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7',
+            9: '8', 10: '9', 11: '0', 12: '-', 13: '=',
             16: 'q',
         },
         1: {
-            1: '\u{1b}', 2: '!', 3: '@', 4: '#', 5: '$', 6: '%', 7: '^', 8: '&',
-            9: '*', 10: '(', 11: ')', 12: '_', 13: '+', 14: '\u{7f}', 15: '\t',
+            2: '!', 3: '@', 4: '#', 5: '$', 6: '%', 7: '^', 8: '&',
+            9: '*', 10: '(', 11: ')', 12: '_', 13: '+',
             16: 'Q',
-        },
-    },
-    keysym_map: {
-        0: {
-            1: Escape,
-            14: Backspace,
-            15: Tab,
         },
     },
     compose: [
@@ -72,8 +64,7 @@ XKB at runtime.
 )
 ```
 
-A comment line `// wkb keyboard layout (RON format)` begins the file. The root
-is a RON struct with the following fields:
+The root is a RON struct with the following fields:
 
 | Field | Kind | Meaning |
 |-------|------|---------|
@@ -101,17 +92,22 @@ share a line), while `keysym_map` puts one key per line:
 ```ron
 keymap: {
     0: {
-        1: '\u{1b}', 2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7',
-        9: '8', 10: '9', 11: '0', 12: '-', 13: '=', 14: '\u{7f}',
-        15: '\t', 16: 'q',
+        2: '1', 3: '2', 4: '3', 5: '4', 6: '5', 7: '6', 8: '7',
+        9: '8', 10: '9', 11: '0', 12: '-', 13: '=',
+        16: 'q',
     },
 }
+```
 
+`keysym_map` uses the same nesting; entries appear only when named identity
+differs from the default (`char` → modifier → evdev inference). A typical US
+layout omits the section entirely.
+
+```ron
 keysym_map: {
     0: {
-        1: Escape,
-        14: Backspace,
-        15: Tab,
+        41: ZenkakuHankaku,
+        58: EisuToggle,
     },
 }
 ```
@@ -234,7 +230,6 @@ On load, the following are enforced (each maps to an `IrError` variant):
 ## Canonical example
 
 ```ron
-// wkb keyboard layout (RON format)
 (
     version: 1,
     layout: "us",
@@ -264,6 +259,24 @@ On load, the following are enforced (each maps to an `IrError` variant):
 
 Sections that would be empty (`num_lock_keys`, `caps_lock_keymap`,
 `keysym_map`, `compose`) are omitted from the output.
+
+## Sparse encoding
+
+Export omits data that import can reconstruct from defaults. Import always
+expands back to a full runtime layout, so behavior roundtrips even when the
+file is smaller than a literal dump.
+
+| Section | Omitted when |
+|---------|----------------|
+| `keymap` level 0 | char matches numpad/media default or universal PC default (Escape, Backspace, Tab, Enter, Space, Delete) |
+| `keymap` level N>0 | char already appears on any lower level |
+| `num_lock_keys` / `caps_lock_keymap` | entry equals `keymap` at that level |
+| `keysym_map` | named key equals the default (char → modifier → evdev inference) |
+| `modifiers` | matches a PC default (Ctrl/Caps/Num) and key has no `keymap` entry; unreachable level modifiers; redundant ISO Level3 on key 84 when AltGr is on 100 |
+| `repeat_remove` | key is in the derived repeat set but does not repeat in this layout |
+
+`repeat_keys` remains accepted on import for hand-written files. Export writes
+`repeat_remove` when the layout differs from the derived default.
 
 ## Compatibility
 

@@ -78,6 +78,12 @@ pub(crate) const XKB_KEY_XF86_NUMERIC_0: u32 = 0x10081200;
 pub(crate) const XKB_KEY_XF86_NUMERIC_9: u32 = 0x10081209;
 pub(crate) const XKB_KEY_XF86_NUMERIC_STAR: u32 = 268964362;
 pub(crate) const XKB_KEY_XF86_NUMERIC_POUND: u32 = 268964363;
+/// X11 dead-key keysyms (`0xfe50`..=`0xfe8d`).
+#[cfg(feature = "client")]
+#[inline]
+pub(crate) fn is_dead_keysym(keysym: u32) -> bool {
+    (0xfe50..=0xfe8d).contains(&keysym)
+}
 pub fn keysym_to_char(keysym: u32) -> Option<char> {
     let codepoint = keysym_to_codepoint(keysym)?;
     char::from_u32(codepoint)
