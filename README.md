@@ -117,24 +117,24 @@ let xkb_string = wkb.as_xkb_string();
 
 | Benchmark | wkb | wkb-noxkb | xkbcommon | xkbcommon-dl | vs xkbcommon |
 |-----------|-----|-----------|-----------|--------------|-------------|
-| Setup (compositor) | 1.37 ms | 823.1 µs | 2.15 ms | 2.16 ms | **1.6x faster** |
-| Setup (client + compose) | 2.00 ms | 889.2 µs | 4.03 ms | 4.07 ms | **2.0x faster** |
-| Compositor key update | 144 ns | 130 ns | 168 ns | 169 ns | **1.2x faster** |
-| Compositor get char | 151 ns | 145 ns | 300 ns | 274 ns | **2.0x faster** |
-| Compositor get keysym | 146 ns | 136 ns | 208 ns | 206 ns | **1.4x faster** |
-| Client update_modifiers | 229 ns | 229 ns | 433 ns | 435 ns | **1.9x faster** |
-| Client get char | 235 ns | 235 ns | 594 ns | 568 ns | **2.5x faster** |
-| Client get keysym | 237 ns | 236 ns | 507 ns | 500 ns | **2.1x faster** |
-| Compose feed | 522 ns | 521 ns | 1.1 µs | 1.1 µs | **2.2x faster** |
+| Setup (compositor) | 1.09 ms | 646.1 µs | 1.72 ms | 1.71 ms | **1.6x faster** |
+| Setup (client + compose) | 1.60 ms | 716.5 µs | 3.35 ms | 3.28 ms | **2.1x faster** |
+| Compositor key update | 115 ns | 105 ns | 128 ns | 128 ns | **1.1x faster** |
+| Compositor get char | 122 ns | 109 ns | 227 ns | 207 ns | **1.9x faster** |
+| Compositor get keysym | 125 ns | 108 ns | 177 ns | 173 ns | **1.4x faster** |
+| Client update_modifiers | 192 ns | 190 ns | 366 ns | 361 ns | **1.9x faster** |
+| Client get char | 197 ns | 197 ns | 470 ns | 436 ns | **2.4x faster** |
+| Client get keysym | 197 ns | 197 ns | 410 ns | 395 ns | **2.1x faster** |
+| Compose feed | 405 ns | 404 ns | 866 ns | 841 ns | **2.1x faster** |
 
 ### Memory
 
 | Library | Peak RSS |
 |---------|----------|
-| wkb | 5.7 MB |
-| wkb-noxkb | 3.8 MB |
-| xkbcommon | 5.7 MB |
-| xkbcommon-dl | 5.7 MB |
+| wkb | 5.8 MB |
+| wkb-noxkb | 4.0 MB |
+| xkbcommon | 5.8 MB |
+| xkbcommon-dl | 5.8 MB |
 
 ### Binary Size
 
