@@ -7,13 +7,43 @@ and this project follows [Semantic Versioning](https://semver.org/spec/v2.0.0.ht
 
 ## [Unreleased]
 
+## [0.3.3] - 2026-08-28
+
+### Added
+
+- Sparse RON layout export: omit universal level-0 keys (Escape, Backspace, Tab,
+  Enter, Space, Delete), duplicate modifier planes, default `keysym_map`
+  entries, and unreachable level modifiers. Export writes `repeat_remove` instead
+  of a full `repeat_keys` list when the layout differs from the derived default.
+- `src/ir_tables.rs` — static PC defaults used by sparse import/export.
+- Locale compose resolution (`src/xkb/compose_paths.rs`): `XCOMPOSEFILE`, XDG
+  `XCompose`, `~/.XCompose`, `compose.dir` with `locale.alias`, and recursive
+  `include` expansion (depth-limited).
+- Dead-key compose filtering: locale compose rules are kept only when the layout
+  exposes the matching dead keysym or reachable prefix character (closer to
+  xkbcommon behaviour).
+
 ### Changed
 
-- Removed duplicate `reset_compose`; use [`WKB::leave`] to clear in-progress compose.
+- RON export encodes `Delete` without a character as `\u{7f}` in `keymap` rather
+  than a `keysym_map` override; Backspace at evdev 14 is a universal default like
+  Delete at 111.
+- Compose tables are filtered once at XKB compile time; IR export/import
+  serialises the in-memory composer trie without a second reachable-char pass.
+- Removed duplicate `reset_compose`; use [`WKB::leave`] to clear in-progress
+  compose.
 - [`ComposeState`] carries all per-key compose data: `Idle(char)`, `ComposeKey(buf)`
   (`·` in buf), `Composing(buf)`, `Finished(char)`, `Cancelled`. No separate
   preview/active query methods.
 - Extended evdev physical-key table through code 633 (single lookup table).
+- `docs/layout-format.md` documents the sparse-encoding rules and current RON
+  shape.
+
+### Fixed
+
+- Clippy and `dead_code` warnings under both `client` and `compositor` feature
+  sets (`is_dead_keysym` gated to `client`, boxed `Statement::Var`, collapsed
+  nested `if` in latch handling).
 
 ## [0.3.2] - 2026-08-25
 
@@ -182,5 +212,7 @@ features and construct `WKB` from precompiled `LayoutFile` values.
 - Added XKB keymap loading, keyboard state tracking, modifier handling,
   compose sequences, LED state, repeat information, and XKB serialization.
 
+[0.3.3]: https://github.com/rano-oss/wkb/compare/v0.3.2...v0.3.3
+[0.3.2]: https://github.com/rano-oss/wkb/compare/v0.3.0...v0.3.2
 [0.2.0]: https://github.com/rano-oss/wkb/compare/abf2491d2aa6dba9d0008aa473a331fa53a78395...v0.2.0
 [0.1.0]: https://github.com/rano-oss/wkb/commit/abf2491d2aa6dba9d0008aa473a331fa53a78395

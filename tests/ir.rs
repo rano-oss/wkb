@@ -20,11 +20,11 @@ fn sample_file() -> LayoutFile {
         version: ir::FORMAT_VERSION,
         layout: "us".to_string(),
         repeat_keys: vec![1, 2, 3],
+        repeat_remove: vec![],
         modifiers: vec![(42, vec![(0, ModAction::Press(ModType::Level2))])],
         keymap,
         num_lock_keys: BTreeMap::new(),
         caps_lock_keymap: BTreeMap::new(),
-        caps_num_lock_keys: BTreeMap::new(),
         keysym_map: BTreeMap::new(),
         compose: vec![(vec![COMPOSE, 'a', 'e'], 'æ')],
     }
@@ -50,7 +50,7 @@ fn serialization_is_deterministic() {
 fn ron_output_matches_suggestion_shape() {
     let file = sample_file();
     let text = file.to_ron_string().unwrap();
-    assert!(text.starts_with("// wkb keyboard layout (RON format)\n"));
+    assert!(text.starts_with("(\n"));
     assert!(text.contains("    version: 1,\n"));
     assert!(text.contains("    layout: \"us\",\n"));
     assert!(!text.contains("num_keys"));
@@ -190,6 +190,38 @@ fn ron_fixtures_roundtrip() {
 }
 
 #[test]
+fn us_export_omits_invariants_and_level_duplicates() {
+    let wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
+    let file = wkb.export_layout(0).unwrap();
+    let l0 = file.keymap.get(&0).expect("level 0");
+    assert!(!l0.contains_key(&1), "escape is invariant at level 0");
+    assert!(!l0.contains_key(&14), "backspace is invariant at level 0");
+    assert!(!l0.contains_key(&15), "tab is invariant at level 0");
+    assert!(!l0.contains_key(&57), "space is invariant at level 0");
+    assert!(!l0.contains_key(&111), "delete is invariant at level 0");
+    let l1 = file.keymap.get(&1).expect("level 1");
+    let l3 = file.keymap.get(&3).expect("level 3");
+    for (keycode, ch) in l1 {
+        assert_ne!(
+            l3.get(keycode),
+            Some(ch),
+            "level 3 should not repeat level 1 at key {keycode}"
+        );
+    }
+}
+
+#[test]
+fn delete_without_char_exports_del_instead_of_keysym_map() {
+    let wkb = WKB::new_from_names("", "", "de(neo)", "", None).unwrap();
+    let file = wkb.export_layout(0).unwrap();
+    let l4 = file.keymap.get(&4).expect("level 4");
+    assert_eq!(l4.get(&83), Some(&'\u{7f}'));
+    for keys in file.keysym_map.values() {
+        assert_ne!(keys.get(&83), Some(&NamedKey::Delete));
+    }
+}
+
+#[test]
 fn xkb_roundtrip_is_exact() {
     let wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
     let first = wkb.export_layout(0).unwrap();
@@ -240,7 +272,6 @@ fn layout_file_compose_ignored_on_import() {
 fn repeat_set_survives_roundtrip() {
     let wkb = WKB::new_from_names("", "", "us", "", None).unwrap();
     let file = wkb.export_layout(0).unwrap();
-    assert!(!file.repeat_keys.is_empty());
 
     let wkb2 = WKB::new_from_layouts(vec![file]).unwrap();
     for code in [38u32, 1, 57] {

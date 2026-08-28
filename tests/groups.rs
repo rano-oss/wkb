@@ -62,6 +62,7 @@ fn layout_with_action(action: ModAction) -> LayoutFile {
         version: wkb::ir::FORMAT_VERSION,
         layout: "test".to_string(),
         repeat_keys: Vec::new(),
+        repeat_remove: Vec::new(),
         modifiers: vec![(42, vec![(0, action)])],
         keymap: BTreeMap::from([
             (0u8, BTreeMap::from([(30u32, 'a')])),
@@ -70,7 +71,6 @@ fn layout_with_action(action: ModAction) -> LayoutFile {
         ]),
         num_lock_keys: BTreeMap::new(),
         caps_lock_keymap: BTreeMap::new(),
-        caps_num_lock_keys: BTreeMap::new(),
         keysym_map: BTreeMap::new(),
         compose: Vec::new(),
     }

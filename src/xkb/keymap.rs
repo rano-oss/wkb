@@ -221,44 +221,92 @@ use crate::xkb::keysym::keysym_to_codepoint;
 #[cfg(feature = "client")]
 use std::path::Path;
 #[cfg(feature = "client")]
+#[derive(Clone, Copy)]
+pub struct ComposeKey {
+    pub ch: char,
+    /// Set when the compose rule names a `dead_*` keysym.
+    pub dead_keysym: Option<u32>,
+}
+#[cfg(feature = "client")]
 #[derive(Clone)]
 pub struct ComposeEntry {
-    pub keys: ArrayVec<char, 8>,
+    pub keys: ArrayVec<ComposeKey, 8>,
     pub multi_key_index: Option<usize>,
     pub output: char,
 }
 #[cfg(feature = "client")]
-pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
+pub(crate) fn keysym_name_to_keysym(name: &str) -> Option<u32> {
     if name.len() == 1 {
         let b = name.as_bytes()[0];
         if b.is_ascii_alphanumeric() {
-            return Some(b as char);
+            return Some(u32::from(b));
         }
     }
     use super::keysym::xkb_keysym_from_name;
     use super::parser::XKB_KEYSYM_NO_FLAGS;
     if let Some(ks) = xkb_keysym_from_name(name.as_bytes(), XKB_KEYSYM_NO_FLAGS) {
-        return keysym_to_codepoint(ks).and_then(char::from_u32);
+        return Some(ks);
     }
     let hex = name.strip_prefix('U')?;
     (!hex.is_empty() && hex.len() <= 6 && hex.chars().all(|c| c.is_ascii_hexdigit()))
-        .then(|| u32::from_str_radix(hex, 16).ok().and_then(char::from_u32))
+        .then(|| u32::from_str_radix(hex, 16).ok())
         .flatten()
 }
 #[cfg(feature = "client")]
-pub(crate) fn parse_compose_file_impl<F>(path: &Path, f: &mut F) -> bool
+pub(crate) fn keysym_name_to_compose_key(name: &str) -> Option<ComposeKey> {
+    let ks = keysym_name_to_keysym(name)?;
+    let ch = keysym_to_codepoint(ks).and_then(char::from_u32)?;
+    let dead_keysym = super::keysym::is_dead_keysym(ks).then_some(ks);
+    Some(ComposeKey { ch, dead_keysym })
+}
+#[cfg(feature = "client")]
+pub(crate) fn keysym_name_to_char(name: &str) -> Option<char> {
+    keysym_name_to_compose_key(name).map(|key| key.ch)
+}
+#[cfg(feature = "client")]
+const COMPOSE_MAX_INCLUDE_DEPTH: usize = 16;
+
+#[cfg(feature = "client")]
+pub(crate) fn parse_compose_file_impl<F>(path: &Path, locale: &str, f: &mut F) -> bool
 where
     F: FnMut(ComposeEntry),
 {
+    parse_compose_file_at_depth(path, locale, 0, f)
+}
+
+#[cfg(feature = "client")]
+fn parse_compose_file_at_depth<F>(path: &Path, locale: &str, depth: usize, f: &mut F) -> bool
+where
+    F: FnMut(ComposeEntry),
+{
+    if depth > COMPOSE_MAX_INCLUDE_DEPTH {
+        return false;
+    }
+
     let Some(data) = std::fs::read(path).ok() else {
         return false;
     };
     let Ok(content) = std::str::from_utf8(&data) else {
         return false;
     };
+
     for line in content.lines() {
         let trimmed = line.trim();
-        if trimmed.is_empty() || trimmed.starts_with('#') || trimmed.starts_with("include") {
+        if trimmed.is_empty() || trimmed.starts_with('#') {
+            continue;
+        }
+        if let Some(rest) = trimmed.strip_prefix("include") {
+            let Some(spec) = parse_include_spec(rest.trim()) else {
+                continue;
+            };
+            let Some(include_path) =
+                super::compose_paths::expand_include_path(spec, locale, path)
+            else {
+                continue;
+            };
+            if !parse_compose_file_at_depth(&include_path, locale, depth + 1, f) {
+                return false;
+            }
             continue;
         }
         if let Some(entry) = parse_rule_line(trimmed) {
@@ -266,6 +314,14 @@ where
         }
     }
     true
+}
+
+#[cfg(feature = "client")]
+fn parse_include_spec(s: &str) -> Option<&str> {
+    let s = s.trim_start();
+    let s = s.strip_prefix('"')?;
+    let (inner, _) = s.split_once('"')?;
+    (!inner.is_empty()).then_some(inner)
 }
 #[cfg(feature = "client")]
 fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
@@ -280,7 +336,7 @@ fn parse_rule_line(line: &str) -> Option<ComposeEntry> {
                 multi_key_index = Some(keys.len());
             }
         } else {
-            keys.push(keysym_name_to_char(name)?);
+            keys.push(keysym_name_to_compose_key(name)?);
         }
     }
     (!keys.is_empty()).then_some(())?;
@@ -309,8 +365,8 @@ fn parse_rhs_value(rhs: &str) -> Option<char> {
     }
 }
 #[cfg(feature = "client")]
-pub(crate) fn resolve_compose_file(_locale: &str) -> Option<String> {
-    Some("en_US.UTF-8/Compose".into())
+pub(crate) fn resolve_compose_path(locale: &str) -> Option<std::path::PathBuf> {
+    super::compose_paths::resolve_compose_path(locale)
 }
 pub(crate) fn xkb_keymap_new(ctx: XkbContext, strict: bool) -> XkbKeymap {
     let mut keymap = XkbKeymap {

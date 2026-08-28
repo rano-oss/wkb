@@ -451,7 +451,7 @@ impl<'a> Parser<'a> {
             let word = self.take_word()?;
             let atom = Self::atom(ctx, word);
             self.punct(b';').then_some(())?;
-            return Some(Statement::Var(VarDef {
+            return Some(Statement::Var(Box::new(VarDef {
                 merge,
                 name: Some(Lhs {
                     element: Element::None,
@@ -459,7 +459,7 @@ impl<'a> Parser<'a> {
                     index: None,
                 }),
                 value: Some(scalar(Scalar::Integer(0))),
-            }));
+            })));
         } else {
             self.parse_lhs(ctx)?
         };
@@ -479,11 +479,11 @@ impl<'a> Parser<'a> {
             self.punct(b';').then_some(())?;
             value
         };
-        Some(Statement::Var(VarDef {
+        Some(Statement::Var(Box::new(VarDef {
             merge,
             name: Some(name),
             value,
-        }))
+        })))
     }
     fn skip_statement(&mut self) -> Option<Statement<'a>> {
         let mut depth = 0;
