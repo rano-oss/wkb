@@ -15,7 +15,7 @@ fn exported_compose_is_stable_on_roundtrip() {
         return; // no compose data available in this environment
     }
 
-    let compose = file.compose;
+    let compose = file.compose.clone();
     let wkb2 = WKB::new_from_layouts(vec![file]).unwrap();
     assert_eq!(wkb2.export_layout(0).unwrap().compose, compose);
 }
