@@ -361,17 +361,7 @@ impl TryFrom<&KBLayout> for LayoutFile {
 fn compose_section(layout: &KBLayout) -> Vec<(Vec<char>, char)> {
     #[cfg(feature = "client")]
     {
-        let mut reachable: Vec<char> = layout
-            .state_keymap
-            .data
-            .iter()
-            .chain(&layout.caps_lock_keymap.data)
-            .chain(&layout.num_lock_keys.data)
-            .filter_map(|ch| *ch)
-            .collect();
-        reachable.sort_unstable();
-        reachable.dedup();
-        compose_from_composer(&layout.composer, &reachable)
+        compose_from_composer(&layout.composer)
     }
     #[cfg(not(feature = "client"))]
     {
@@ -713,11 +703,11 @@ fn modaction_from_state_modifier(kind: &StateModifier) -> ModAction {
 }
 
 #[cfg(feature = "client")]
-/// Depth-first walk of the composer trie emitting reachable, sorted sequences.
-fn compose_from_composer(composer: &Composer, reachable: &[char]) -> Vec<(Vec<char>, char)> {
+/// Depth-first walk of the composer trie emitting sorted sequences.
+fn compose_from_composer(composer: &Composer) -> Vec<(Vec<char>, char)> {
     let mut out = Vec::new();
     let mut path = Vec::new();
-    dfs_compose(composer, 0, &mut path, &mut out, reachable);
+    dfs_compose(composer, 0, &mut path, &mut out);
     out.sort();
     out
 }
@@ -728,16 +718,10 @@ fn dfs_compose(
     node: u32,
     path: &mut Vec<char>,
     out: &mut Vec<(Vec<char>, char)>,
-    reachable: &[char],
 ) {
     let node = &composer.nodes[node as usize];
     if let Some(emit) = node.emit {
-        let reachable = path
-            .iter()
-            .all(|ch| *ch == COMPOSE_KEY_CHAR || reachable.binary_search(ch).is_ok());
-        if reachable {
-            out.push((path.clone(), emit));
-        }
+        out.push((path.clone(), emit));
     }
     for &(key, child) in &node.children {
         path.push(if key == 0 {
@@ -745,7 +729,7 @@ fn dfs_compose(
         } else {
             char::from_u32(key).unwrap_or('\u{fffd}')
         });
-        dfs_compose(composer, child, path, out, reachable);
+        dfs_compose(composer, child, path, out);
         path.pop();
     }
 }
@@ -783,13 +767,12 @@ impl TryFrom<LayoutFile> for KBLayout {
             }
         }
 
-        #[cfg(feature = "client")]
-        let composer = composer_from_compose(&file.compose);
-
         let state_keymap = expand_keymap_section(&file.keymap, num_keys);
         let num_levels = state_keymap.num_levels;
         let num_lock_keys = expand_override_section(&file.num_lock_keys, num_keys, num_levels);
         let caps_lock_keymap = expand_override_section(&file.caps_lock_keymap, num_keys, num_levels);
+        #[cfg(feature = "client")]
+        let composer = composer_from_compose(&file.compose);
         let mut named_key_map =
             derive_named_key_map(num_keys, num_levels, &state_keymap, &modifiers);
         apply_named_overrides(&mut named_key_map, &file.keysym_map);
