@@ -408,9 +408,7 @@ impl WKB {
 
     /// Resolve the character for the given evdev keycode under the current modifier state.
     /// This is a pure lookup with no side effects — it does not update modifier state
-    /// or advance compose sequences. Use this for:
-    /// - `text_with_all_modifiers` (winit): the raw character including all modifier effects
-    /// - Re-resolving characters when modifiers change during key repeat
+    /// or advance compose sequences.
     ///
     /// Returns `None` while Ctrl, Alt, or Logo are active so callers do not treat
     /// shortcut chords as typed text.
@@ -423,7 +421,8 @@ impl WKB {
         let base_level = level_index(level5, level3, level2);
         let num_locked = kb_layout.modifiers.num_locked();
         let caps_locked = kb_layout.modifiers.caps_locked();
-        #[cfg(feature = "xkb")]{
+        #[cfg(feature = "xkb")]
+        {
             if num_locked && caps_locked {
                 if let Some(c) = kb_layout.caps_num_lock_keys.get(base_level, evdev_code) {
                     return Some(c);
